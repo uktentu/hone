@@ -9,6 +9,7 @@ export function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { signup, login } = useAuth();
@@ -22,6 +23,10 @@ export function AuthPage() {
 
         if (password.length < 6) {
             return setError('Password should be at least 6 characters');
+        }
+
+        if (!isLogin && password !== confirmPassword) {
+            return setError('Passwords do not match');
         }
 
         try {
@@ -64,6 +69,7 @@ export function AuthPage() {
                             onClick={() => {
                                 setIsLogin(true);
                                 setError('');
+                                setConfirmPassword('');
                             }}
                             className={clsx(
                                 "flex-1 py-2 px-4 rounded font-medium transition-all text-sm uppercase tracking-wide",
