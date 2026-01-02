@@ -2,11 +2,14 @@ import { Layout } from './components/Layout';
 import { Sidebar } from './components/Sidebar';
 import { Calendar } from './components/Calendar';
 import { SplashScreen } from './components/SplashScreen';
+import { AuthPage } from './components/AuthPage';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useHabits } from './hooks/useHabits';
 import { useState } from 'react';
 
-function App() {
+function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
+  const { currentUser } = useAuth();
   const {
     habitData,
     calendarData,
@@ -16,6 +19,10 @@ function App() {
 
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
+  if (!currentUser) {
+    return <AuthPage />;
   }
 
   return (
@@ -43,6 +50,14 @@ function App() {
         logs={habitData.logs}
       />
     </Layout>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

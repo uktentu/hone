@@ -1,7 +1,9 @@
 import type { Habit, CalendarGroup } from '../types';
-import { Plus, Trash2, Edit2, X, Search, Sparkles, Layout, Folder, FolderOpen } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Search, Sparkles, Layout, Folder, FolderOpen, LogOut } from 'lucide-react';
+
 import clsx from 'clsx';
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
     habits: Habit[];
@@ -42,7 +44,17 @@ export function Sidebar({
 }: SidebarProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const { currentUser, logout } = useAuth();
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+    const handleLogout = () => {
+        setShowLogoutConfirm(true);
+    };
+
+    const confirmLogout = async () => {
+        setShowLogoutConfirm(false);
+        await logout();
+    };
 
 
     // Mobile Habit Popup State
@@ -645,6 +657,28 @@ export function Sidebar({
                             </button>
                         )}
                     </div>
+
+                    {/* User Info & Logout - Bottom */}
+                    {currentUser && (
+                        <div className={clsx(
+                            "flex items-center gap-2 px-3 py-2.5 border-t border-zinc-800 mt-auto transition-all duration-300",
+                            isExpanded ? "justify-between" : "justify-center"
+                        )}>
+                            <div className={clsx(
+                                "flex-1 min-w-0 transition-all duration-300",
+                                isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
+                            )}>
+                                <p className="text-xs text-zinc-400 truncate">{currentUser.email}</p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0"
+                                title="Logout"
+                            >
+                                <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Desktop Habit List Panel (Inside Sidebar) */}
@@ -682,6 +716,30 @@ export function Sidebar({
                 </button>
                 {habitListContent}
             </div>
+
+            {/* Logout Confirmation Dialog */}
+            {showLogoutConfirm && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-sm mx-4 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-bold text-white mb-2">Confirm Logout</h3>
+                        <p className="text-sm text-zinc-400 mb-6">Are you sure you want to logout? You'll need to sign in again to access your habits.</p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowLogoutConfirm(false)}
+                                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded text-sm font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmLogout}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
+                            >
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

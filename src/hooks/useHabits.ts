@@ -1,20 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Habit, HabitLog, CalendarGroup } from '../types';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, subDays, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { useAuth } from '../contexts/AuthContext';
 
-const STORAGE_KEY_HABITS = 'hone_habits';
-const STORAGE_KEY_LOGS = 'hone_logs';
-const STORAGE_KEY_CALENDARS = 'hone_calendars';
-
-const DEFAULT_CALENDARS: CalendarGroup[] = [
-    { id: 'default', name: 'My Calendar' }
+const DEFAULT_CALENDARS: Omit<CalendarGroup, 'id' | 'userId'>[] = [
+    { name: 'My Calendar' }
 ];
 
-const DEFAULT_HABITS: Habit[] = [
-    { id: '1', calendarId: 'default', name: 'Work', emoji: '💼', color: '#667eea' },
-    { id: '2', calendarId: 'default', name: 'Exercise', emoji: '💪', color: '#f5576c' },
-    { id: '3', calendarId: 'default', name: 'Reading', emoji: '📚', color: '#4facfe' },
-    { id: '4', calendarId: 'default', name: 'Code', emoji: '💻', color: '#00f2fe' },
+const DEFAULT_HABITS: Omit<Habit, 'id' | 'userId'>[] = [
+    { calendarId: 'default', name: 'Work', emoji: '💼', color: '#667eea' },
+    { calendarId: 'default', name: 'Exercise', emoji: '💪', color: '#f5576c' },
+    { calendarId: 'default', name: 'Reading', emoji: '📚', color: '#4facfe' },
+    { calendarId: 'default', name: 'Code', emoji: '💻', color: '#00f2fe' },
 ];
 
 export interface HabitStats {
@@ -27,46 +26,99 @@ export interface HabitStats {
 }
 
 export function useHabits() {
-    const [calendars, setCalendars] = useState<CalendarGroup[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY_CALENDARS);
-            return stored ? JSON.parse(stored) : DEFAULT_CALENDARS;
-        } catch (e) {
-            console.error('Failed to parse calendars from storage', e);
-            return DEFAULT_CALENDARS;
-        }
-    });
+    const { currentUser } = useAuth();
+    const [calendars, setCalendars] = useState<CalendarGroup[]>([]);
+    const [habits, setHabits] = useState<Habit[]>([]);
+    const [logs, setLogs] = useState<HabitLog>({});
+    const [selectedCalendarId, setSelectedCalendarId] = useState<string>('');
+    const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
+    const [initialized, setInitialized] = useState(false);
 
-    const [habits, setHabits] = useState<Habit[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY_HABITS);
-            return stored ? JSON.parse(stored) : DEFAULT_HABITS;
-        } catch (e) {
-            console.error('Failed to parse habits from storage', e);
-            return DEFAULT_HABITS;
-        }
-    });
+    // Setup Firestore real-time listeners
+    useEffect(() => {
+        if (!currentUser) return;
 
-    const [logs, setLogs] = useState<HabitLog>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY_LOGS);
-            return stored ? JSON.parse(stored) : {};
-        } catch (e) {
-            console.error('Failed to parse logs from storage', e);
-            return {};
-        }
-    });
+        const userId = currentUser.uid;
 
-    const [selectedCalendarId, setSelectedCalendarId] = useState<string>(calendars[0]?.id || 'default');
+        // Listen to calendars
+        const calendarsQuery = query(
+            collection(db, 'calendars'),
+            where('userId', '==', userId)
+        );
+        const unsubCalendars = onSnapshot(calendarsQuery, async (snapshot) => {
+            const calendarData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as CalendarGroup));
 
-    // Select first habit of the selected calendar by default if none selected
+            // Initialize with default calendar if empty
+            if (calendarData.length === 0 && !initialized) {
+                const defaultCalId = await addDoc(collection(db, 'calendars'), {
+                    ...DEFAULT_CALENDARS[0],
+                    userId
+                });
+                setSelectedCalendarId(defaultCalId.id);
+                setInitialized(true);
+            } else {
+                setCalendars(calendarData);
+                if (!selectedCalendarId && calendarData.length > 0) {
+                    setSelectedCalendarId(calendarData[0].id);
+                }
+            }
+        });
+
+        // Listen to habits
+        const habitsQuery = query(
+            collection(db, 'habits'),
+            where('userId', '==', userId)
+        );
+        const unsubHabits = onSnapshot(habitsQuery, async (snapshot) => {
+            const habitData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as Habit));
+
+            // Initialize with default habits if empty and we have a calendar
+            if (habitData.length === 0 && !initialized && calendars.length > 0) {
+                for (const habit of DEFAULT_HABITS) {
+                    await addDoc(collection(db, 'habits'), {
+                        ...habit,
+                        userId,
+                        calendarId: calendars[0].id
+                    });
+                }
+                setInitialized(true);
+            } else {
+                setHabits(habitData);
+            }
+        });
+
+        // Listen to logs
+        const logsQuery = query(
+            collection(db, 'logs'),
+            where('userId', '==', userId)
+        );
+        const unsubLogs = onSnapshot(logsQuery, (snapshot) => {
+            const logData: HabitLog = {};
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                logData[data.date] = data.habitIds || [];
+            });
+            setLogs(logData);
+        });
+
+        return () => {
+            unsubCalendars();
+            unsubHabits();
+            unsubLogs();
+        };
+    }, [currentUser, initialized]);
+
     const filteredHabits = useMemo(() =>
         habits.filter(h => h.calendarId === selectedCalendarId),
         [habits, selectedCalendarId]);
 
-    const [selectedHabitId, setSelectedHabitId] = useState<string | null>(filteredHabits[0]?.id || null);
-
-    // Ensure selected habit is valid for current calendar
+    // Auto-select first habit when calendar changes
     useEffect(() => {
         if (selectedHabitId) {
             const habit = habits.find(h => h.id === selectedHabitId);
@@ -78,86 +130,81 @@ export function useHabits() {
         }
     }, [selectedCalendarId, filteredHabits, habits]);
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_CALENDARS, JSON.stringify(calendars));
-    }, [calendars]);
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_HABITS, JSON.stringify(habits));
-    }, [habits]);
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(logs));
-    }, [logs]);
-
-    const addCalendar = (name: string, color?: string) => {
-        const newCalendar: CalendarGroup = {
-            id: crypto.randomUUID(),
+    const addCalendar = async (name: string, color?: string) => {
+        if (!currentUser) return;
+        const newCalendar = {
             name,
-            color
+            color,
+            userId: currentUser.uid
         };
-        setCalendars([...calendars, newCalendar]);
-        setSelectedCalendarId(newCalendar.id);
+        const docRef = await addDoc(collection(db, 'calendars'), newCalendar);
+        setSelectedCalendarId(docRef.id);
     };
 
-    const editCalendar = (id: string, name: string, color?: string) => {
-        setCalendars(calendars.map(c => c.id === id ? { ...c, name, color } : c));
+    const editCalendar = async (id: string, name: string, color?: string) => {
+        const calendarRef = doc(db, 'calendars', id);
+        await updateDoc(calendarRef, { name, color });
     };
 
-    const deleteCalendar = (id: string) => {
-        if (calendars.length <= 1) return; // Prevent deleting last calendar
-        const updatedCalendars = calendars.filter(c => c.id !== id);
-        setCalendars(updatedCalendars);
+    const deleteCalendar = async (id: string) => {
+        if (calendars.length <= 1) return;
 
-        // Also delete habits associated with this calendar
-        const updatedHabits = habits.filter(h => h.calendarId !== id);
-        setHabits(updatedHabits);
+        // Delete calendar
+        await deleteDoc(doc(db, 'calendars', id));
+
+        // Delete associated habits
+        const habitsToDelete = habits.filter(h => h.calendarId === id);
+        for (const habit of habitsToDelete) {
+            await deleteDoc(doc(db, 'habits', habit.id));
+        }
 
         if (selectedCalendarId === id) {
-            setSelectedCalendarId(updatedCalendars[0].id);
+            const remaining = calendars.filter(c => c.id !== id);
+            setSelectedCalendarId(remaining[0]?.id || '');
         }
     };
 
-    const addHabit = (name: string, emoji: string, color: string) => {
-        const newHabit: Habit = {
-            id: crypto.randomUUID(),
-            calendarId: selectedCalendarId,
+    const addHabit = async (name: string, emoji: string, color: string) => {
+        if (!currentUser) return;
+        const newHabit = {
             name,
             emoji: emoji || '📝',
             color,
+            calendarId: selectedCalendarId,
+            userId: currentUser.uid
         };
-        setHabits([...habits, newHabit]);
-        setSelectedHabitId(newHabit.id);
+        const docRef = await addDoc(collection(db, 'habits'), newHabit);
+        setSelectedHabitId(docRef.id);
     };
 
-    const deleteHabit = (id: string) => {
-        const updatedHabits = habits.filter(h => h.id !== id);
-        setHabits(updatedHabits);
+    const editHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'userId' | 'calendarId'>>) => {
+        const habitRef = doc(db, 'habits', id);
+        await updateDoc(habitRef, updates);
+    };
+
+    const deleteHabit = async (id: string) => {
+        await deleteDoc(doc(db, 'habits', id));
         if (selectedHabitId === id) {
-            // Find next available habit in the same calendar
-            const remainingInCalendar = updatedHabits.filter(h => h.calendarId === selectedCalendarId);
-            setSelectedHabitId(remainingInCalendar.length > 0 ? remainingInCalendar[0].id : null);
+            const remaining = habits.filter(h => h.id !== id && h.calendarId === selectedCalendarId);
+            setSelectedHabitId(remaining[0]?.id || null);
         }
     };
 
-    const toggleHabitForDate = (date: Date, habitId: string) => {
+    const toggleHabitForDate = async (date: Date, habitId: string) => {
+        if (!currentUser) return;
         const dateKey = format(date, 'yyyy-MM-dd');
-        console.log('Toggling habit:', { dateKey, habitId });
-        setLogs(prev => {
-            const currentHabits = prev[dateKey] || [];
-            const updatedHabits = currentHabits.includes(habitId)
-                ? currentHabits.filter(id => id !== habitId)
-                : [...currentHabits, habitId];
+        const currentHabits = logs[dateKey] || [];
+        const updatedHabits = currentHabits.includes(habitId)
+            ? currentHabits.filter(id => id !== habitId)
+            : [...currentHabits, habitId];
 
-            return {
-                ...prev,
-                [dateKey]: updatedHabits
-            };
-        });
-    };
-
-    const toggleHabitSelection = (habitId: string) => {
-        setSelectedHabitId(habitId);
+        // Use setDoc with merge to create or update
+        const logRef = doc(db, 'logs', `${currentUser.uid}_${dateKey}`);
+        await setDoc(logRef, {
+            date: dateKey,
+            habitIds: updatedHabits,
+            userId: currentUser.uid
+        }, { merge: true });
     };
 
     const isHabitCompleted = (date: Date, habitId: string) => {
@@ -165,16 +212,14 @@ export function useHabits() {
         return logs[dateKey]?.includes(habitId) || false;
     };
 
-    const editHabit = (id: string, updates: Partial<Omit<Habit, 'id' | 'calendarId'>>) => {
-        setHabits(habits.map(h => h.id === id ? { ...h, ...updates } : h));
+    const toggleHabitSelection = (habitId: string) => {
+        setSelectedHabitId(habitId);
     };
 
-    // Calculate statistics for a habit
     const getHabitStats = (habitId: string): HabitStats => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Get all dates and normalize them to midnight
         const allDates = Object.keys(logs)
             .filter(dateKey => logs[dateKey].includes(habitId))
             .map(dateKey => {
@@ -184,9 +229,8 @@ export function useHabits() {
             .sort((a, b) => b.getTime() - a.getTime());
 
         const totalDays = allDates.length;
-        console.log('Stats Debug:', { habitId, allDates: allDates.map(d => format(d, 'yyyy-MM-dd')) });
 
-        // Calculate current streak (from today backwards)
+        // Current streak
         let currentStreak = 0;
         let checkDate = new Date(today);
         for (let i = 0; i < 365; i++) {
@@ -199,17 +243,15 @@ export function useHabits() {
             }
         }
 
-        // Calculate longest streak
+        // Longest streak
         let longestStreak = 0;
         if (allDates.length > 0) {
             let tempStreak = 1;
             for (let i = 1; i < allDates.length; i++) {
                 const daysDiff = differenceInDays(allDates[i - 1], allDates[i]);
                 if (daysDiff === 1) {
-                    // Consecutive days
                     tempStreak++;
                 } else {
-                    // Streak broken
                     longestStreak = Math.max(longestStreak, tempStreak);
                     tempStreak = 1;
                 }
@@ -264,8 +306,8 @@ export function useHabits() {
     }, [selectedHabitId, logs]);
 
     return {
-        habitData: { // Group related logic
-            habits: filteredHabits, // Expose filtered list
+        habitData: {
+            habits: filteredHabits,
             allHabits: habits,
             logs
         },
