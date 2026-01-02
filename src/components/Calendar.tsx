@@ -132,27 +132,27 @@ export function Calendar({ habits, selectedHabitId, selectedHabitStats, onToggle
 
                 {/* Statistics - Compact & Monochrome */}
                 {selectedHabit && selectedHabitStats && (
-                    <div className="flex items-center gap-4 mt-1 overflow-x-auto pb-1 no-scrollbar">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Current</span>
                             <span className="text-sm font-bold text-white">{selectedHabitStats.currentStreak}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">d</span></span>
                         </div>
-                        <div className="w-px h-3 bg-zinc-800" />
+                        <div className="hidden sm:block w-px h-3 bg-zinc-800" />
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Best</span>
                             <span className="text-sm font-bold text-white">{selectedHabitStats.longestStreak}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">d</span></span>
                         </div>
-                        <div className="w-px h-3 bg-zinc-800" />
+                        <div className="hidden sm:block w-px h-3 bg-zinc-800" />
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Week</span>
                             <span className="text-sm font-bold text-white">{selectedHabitStats.thisWeek}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">/7</span></span>
                         </div>
-                        <div className="w-px h-3 bg-zinc-800" />
+                        <div className="hidden sm:block w-px h-3 bg-zinc-800" />
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Month</span>
                             <span className="text-sm font-bold text-white">{selectedHabitStats.thisMonth}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">d</span></span>
                         </div>
-                        <div className="w-px h-3 bg-zinc-800" />
+                        <div className="hidden sm:block w-px h-3 bg-zinc-800" />
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Rate</span>
                             <span className="text-sm font-bold text-white">{selectedHabitStats.completionRate}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">%</span></span>
