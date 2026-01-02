@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import clsx from 'clsx';
 import { AlertCircle, Mail, Lock, Sparkles } from 'lucide-react';
+import { getFirebaseErrorMessage } from '../utils/errorMessages';
 
 export function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
@@ -32,11 +33,7 @@ export function AuthPage() {
                 await signup(email, password);
             }
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message || 'Failed to authenticate');
-            } else {
-                setError('Failed to authenticate');
-            }
+            setError(getFirebaseErrorMessage(err));
         } finally {
             setLoading(false);
         }
