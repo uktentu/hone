@@ -487,7 +487,7 @@ export function Sidebar({
                             // Mobile: Always visible (Header mode)
                             "w-auto opacity-100"
                         )}>
-                            <img src="/favicon.png" alt="Logo" className="w-6 h-6 object-contain shrink-0" />
+                            <img src="./favicon.png" alt="Logo" className="w-6 h-6 object-contain shrink-0" />
                             <span className="text-sm font-bold text-white tracking-wide truncate">Hone</span>
                         </div>
                     </div>
