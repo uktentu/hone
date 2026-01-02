@@ -182,6 +182,16 @@ export function Sidebar({
 
     const activeCalendar = calendars.find(c => c.id === selectedCalendarId) || calendars[0];
 
+    // Safety check for loading state
+    if (!activeCalendar && calendars.length === 0) {
+        return (
+            <div className="md:w-64 border-r border-zinc-900 bg-zinc-950 p-4 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-zinc-800 border-t-white rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+
     const habitListContent = (
         <>
             {/* Header */}
