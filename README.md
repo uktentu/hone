@@ -1,4 +1,4 @@
-# Holiday - Habit Tracker
+# Hone - Habit Tracker
 
 A beautiful, modern habit tracking calendar application built with React, TypeScript, and Tailwind CSS. Track your daily habits with an intuitive interface featuring month and year views.
 

@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import type { Habit, HabitLog, CalendarGroup } from '../types';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, subDays, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
 
-const STORAGE_KEY_HABITS = 'holiday_habits';
-const STORAGE_KEY_LOGS = 'holiday_logs';
-const STORAGE_KEY_CALENDARS = 'holiday_calendars';
+const STORAGE_KEY_HABITS = 'hone_habits';
+const STORAGE_KEY_LOGS = 'hone_logs';
+const STORAGE_KEY_CALENDARS = 'hone_calendars';
 
 const DEFAULT_CALENDARS: CalendarGroup[] = [
     { id: 'default', name: 'My Calendar' }
