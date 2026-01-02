@@ -502,7 +502,7 @@ export function Sidebar({
                             <img src="./favicon.png" alt="Logo" className="w-6 h-6 object-contain shrink-0" />
                             <span className="text-sm font-bold text-white tracking-wide truncate">Hone</span>
                         </div>
-                        
+
                         {/* Mobile-only logout button */}
                         {currentUser && (
                             <button
@@ -672,7 +672,7 @@ export function Sidebar({
                     {/* User Info & Logout - Bottom */}
                     {currentUser && (
                         <div className={clsx(
-                            "flex items-center gap-2 px-3 py-2.5 border-t border-zinc-800 mt-auto transition-all duration-300",
+                            "hidden md:flex items-center gap-2 px-3 py-2.5 border-t border-zinc-800 mt-auto transition-all duration-300",
                             isExpanded ? "justify-between" : "justify-center"
                         )}>
                             <div className={clsx(
