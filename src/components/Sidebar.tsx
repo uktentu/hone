@@ -502,6 +502,17 @@ export function Sidebar({
                             <img src="./favicon.png" alt="Logo" className="w-6 h-6 object-contain shrink-0" />
                             <span className="text-sm font-bold text-white tracking-wide truncate">Hone</span>
                         </div>
+                        
+                        {/* Mobile-only logout button */}
+                        {currentUser && (
+                            <button
+                                onClick={handleLogout}
+                                className="md:hidden p-2 hover:bg-zinc-800 rounded transition-colors group"
+                                title="Logout"
+                            >
+                                <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                            </button>
+                        )}
                     </div>
 
 
