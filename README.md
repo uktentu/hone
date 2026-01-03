@@ -6,10 +6,12 @@ A beautiful, modern habit tracking calendar application built with React, TypeSc
 
 - 📅 **Calendar Views**: Switch between month and year views to track your habits
 - 🎨 **Customizable Habits**: Create habits with custom names, emojis, and colors
-- 💾 **Local Storage**: All your data is saved locally in your browser
+- �️ **Drag & Drop**: Reorder habits and calendars with ease
+- ☁️ **Cloud Sync**: Real-time data synchronization with Firebase
 - 🌙 **Dark Theme**: Beautiful dark theme with glassmorphism design
 - 📱 **Responsive**: Works seamlessly on desktop and mobile devices
 - ⚡ **Fast & Smooth**: Built with Vite for lightning-fast performance
+- 🖼️ **Splash Screen**: Elegant startup animation with version display
 
 ## Getting Started
 
@@ -40,8 +42,9 @@ A beautiful, modern habit tracking calendar application built with React, TypeSc
 1. **Create a Habit**: Click the "+" button in the sidebar to add a new habit
 2. **Select a Habit**: Click on a habit in the sidebar to view its tracking calendar
 3. **Mark Complete**: Click on any day in the calendar to mark a habit as complete
-4. **Edit/Delete**: Use the edit and delete buttons that appear when hovering over a habit
-5. **Switch Views**: Toggle between Month and Year views using the buttons in the header
+4. **Reorder**: Drag and drop habits or calendars to customize their order
+5. **Edit/Delete**: Use the edit and delete buttons that appear when hovering over a habit
+6. **Switch Views**: Toggle between Month and Year views using the buttons in the header
 
 ## Tech Stack
 
@@ -49,6 +52,8 @@ A beautiful, modern habit tracking calendar application built with React, TypeSc
 - **TypeScript** - Type safety
 - **Vite** - Build tool
 - **Tailwind CSS** - Styling
+- **Firebase** - Backend & Database
+- **@dnd-kit** - Drag & Drop interactions
 - **date-fns** - Date utilities
 - **lucide-react** - Icons
 
