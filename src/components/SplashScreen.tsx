@@ -50,21 +50,20 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                         alt="Hone"
                         className="w-24 h-24 relative z-10 drop-shadow-2xl"
                     />
-                    <span className={clsx(
-                        "absolute -bottom-2 -right-8 text-[10px] text-zinc-600 font-mono transition-opacity duration-1000 delay-700",
-                        logoVisible ? "opacity-100" : "opacity-0"
-                    )}>
-                        v{pkg.version}
-                    </span>
                 </div>
 
                 {/* Text Animation */}
-                <h1 className={clsx(
-                    "mt-8 text-3xl font-bold text-white tracking-[0.2em] uppercase text-center transition-all duration-1000 delay-300 pl-[0.2em]",
+                <div className={clsx(
+                    "mt-8 flex items-baseline gap-2 transition-all duration-1000 delay-300",
                     logoVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                 )}>
-                    Hone
-                </h1>
+                    <h1 className="text-3xl font-bold text-white tracking-[0.2em] uppercase pl-[0.2em]">
+                        Hone
+                    </h1>
+                    <span className="text-[10px] text-zinc-600 font-mono">
+                        v{pkg.version}
+                    </span>
+                </div>
                 <p className={clsx(
                     "mt-3 text-xs font-medium text-zinc-500 tracking-widest uppercase text-center transition-all duration-1000 delay-500 pl-[0.1em]",
                     logoVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
