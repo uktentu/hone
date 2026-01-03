@@ -62,8 +62,11 @@ export function useHabits() {
             } else {
                 setCalendars(calendarData);
                 if (!selectedCalendarId && calendarData.length > 0) {
-                    setSelectedCalendarId(calendarData[0].id);
+                    // Sort by order when setting initial selection
+                    const sorted = [...calendarData].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                    setSelectedCalendarId(sorted[0].id);
                 }
+                setCalendars(calendarData.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
             }
         });
 
@@ -114,9 +117,12 @@ export function useHabits() {
         };
     }, [currentUser, initialized]);
 
-    const filteredHabits = useMemo(() =>
-        habits.filter(h => h.calendarId === selectedCalendarId),
-        [habits, selectedCalendarId]);
+    // Sort habits by order
+    const filteredHabits = useMemo(() => {
+        return habits
+            .filter(h => h.calendarId === selectedCalendarId)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }, [habits, selectedCalendarId]);
 
     // Auto-select first habit when calendar changes
     useEffect(() => {
@@ -132,13 +138,37 @@ export function useHabits() {
 
     const addCalendar = async (name: string, color?: string) => {
         if (!currentUser) return;
+
+        // Calculate next order
+        const maxOrder = Math.max(...calendars.map(c => c.order ?? 0), 0);
+
         const newCalendar = {
             name,
             color,
-            userId: currentUser.uid
+            userId: currentUser.uid,
+            order: maxOrder + 1
         };
         const docRef = await addDoc(collection(db, 'calendars'), newCalendar);
         setSelectedCalendarId(docRef.id);
+    };
+
+    const reorderCalendars = async (activeId: string, overId: string) => {
+        const oldIndex = calendars.findIndex(c => c.id === activeId);
+        const newIndex = calendars.findIndex(c => c.id === overId);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const newCalendars = [...calendars];
+            const [movedCalendar] = newCalendars.splice(oldIndex, 1);
+            newCalendars.splice(newIndex, 0, movedCalendar);
+
+            // Update all affected calendars in Firestore
+            newCalendars.forEach((cal, index) => {
+                if (cal.order !== index + 1) {
+                    const calRef = doc(db, 'calendars', cal.id);
+                    updateDoc(calRef, { order: index + 1 });
+                }
+            });
+        }
     };
 
     const editCalendar = async (id: string, name: string, color?: string) => {
@@ -166,12 +196,18 @@ export function useHabits() {
 
     const addHabit = async (name: string, emoji: string, color: string) => {
         if (!currentUser) return;
+
+        // Calculate next order value
+        const currentCalendarHabits = habits.filter(h => h.calendarId === selectedCalendarId);
+        const maxOrder = Math.max(...currentCalendarHabits.map(h => h.order ?? 0), 0);
+
         const newHabit = {
             name,
             emoji: emoji || '📝',
             color,
             calendarId: selectedCalendarId,
-            userId: currentUser.uid
+            userId: currentUser.uid,
+            order: maxOrder + 1
         };
         const docRef = await addDoc(collection(db, 'habits'), newHabit);
         setSelectedHabitId(docRef.id);
@@ -180,6 +216,25 @@ export function useHabits() {
     const editHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'userId' | 'calendarId'>>) => {
         const habitRef = doc(db, 'habits', id);
         await updateDoc(habitRef, updates);
+    };
+
+    const reorderHabits = async (activeId: string, overId: string) => {
+        const oldIndex = filteredHabits.findIndex(h => h.id === activeId);
+        const newIndex = filteredHabits.findIndex(h => h.id === overId);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const newHabits = [...filteredHabits];
+            const [movedHabit] = newHabits.splice(oldIndex, 1);
+            newHabits.splice(newIndex, 0, movedHabit);
+
+            // Update all affected habits in Firestore
+            newHabits.forEach((habit, index) => {
+                if (habit.order !== index + 1) {
+                    const habitRef = doc(db, 'habits', habit.id);
+                    updateDoc(habitRef, { order: index + 1 });
+                }
+            });
+        }
     };
 
     const deleteHabit = async (id: string) => {
@@ -317,6 +372,7 @@ export function useHabits() {
             addCalendar,
             editCalendar,
             deleteCalendar,
+            reorderCalendars,
             selectCalendar: setSelectedCalendarId
         },
         selection: {
@@ -327,6 +383,7 @@ export function useHabits() {
         actions: {
             addHabit,
             editHabit,
+            reorderHabits,
             deleteHabit,
             toggleHabitForDate,
             isHabitCompleted

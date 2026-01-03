@@ -4,6 +4,9 @@ import { Plus, Trash2, Edit2, X, Search, Sparkles, Layout, Folder, FolderOpen, L
 import clsx from 'clsx';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface SidebarProps {
     habits: Habit[];
@@ -13,11 +16,81 @@ interface SidebarProps {
     onAddCalendar: (name: string, color?: string) => void;
     onEditCalendar: (id: string, name: string, color?: string) => void;
     onDeleteCalendar: (id: string) => void;
+    onReorderCalendars: (activeId: string, overId: string) => void;
     onAddHabit: (name: string, emoji: string, color: string) => void;
     onEditHabit: (id: string, updates: Partial<Omit<Habit, 'id' | 'calendarId'>>) => void;
     onDeleteHabit: (id: string) => void;
+    onReorderHabits: (activeId: string, overId: string) => void;
     onSelectHabit: (id: string) => void;
     selectedHabitId: string | null;
+}
+
+// Sortable Item Component
+function SortableHabitItem({ habit, isEditing, children }: any) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: habit.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 1,
+        opacity: isDragging ? 0.5 : 1,
+        position: 'relative' as const,
+    };
+
+    if (isEditing) {
+        return (
+            <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+                {children}
+            </div>
+        );
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            {children}
+        </div>
+    );
+}
+
+// Reuse sortable item logic for calendars
+function SortableCalendarItem({ id, isEditing, children }: any) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 1,
+        opacity: isDragging ? 0.5 : 1,
+        position: 'relative' as const,
+    };
+
+    if (isEditing) {
+        return (
+            <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+                {children}
+            </div>
+        );
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            {children}
+        </div>
+    );
 }
 
 // Restored Accent Colors
@@ -36,12 +109,39 @@ export function Sidebar({
     onAddCalendar,
     onEditCalendar,
     onDeleteCalendar,
+    onReorderCalendars,
     onAddHabit,
     onEditHabit,
     onDeleteHabit,
+    onReorderHabits,
     onSelectHabit,
     selectedHabitId
 }: SidebarProps) {
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleHabitDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            onReorderHabits(active.id as string, over.id as string);
+        }
+    };
+
+    const handleCalendarDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            onReorderCalendars(active.id as string, over.id as string);
+        }
+    };
+
     const [isAdding, setIsAdding] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const { currentUser, logout } = useAuth();
@@ -303,121 +403,136 @@ export function Sidebar({
                 )}
 
                 <div className="space-y-1">
-                    {filteredHabits.map((habit) => {
-                        const isEditing = habit.id === editingId;
-                        const isSelected = selectedHabitId === habit.id;
+                    <DndContext
+                        id="habits-dnd"
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleHabitDragEnd}
+                    >
+                        <SortableContext
+                            items={filteredHabits.map(h => h.id)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            {filteredHabits.map((habit) => {
+                                const isEditing = habit.id === editingId;
+                                const isSelected = selectedHabitId === habit.id;
 
-                        if (isEditing) {
-                            return (
-                                <form key={habit.id} ref={editFormRef} onSubmit={handleSubmit} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-2 shadow-lg flex flex-col gap-2 animate-slide-in">
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={(e) => handlePopoverTrigger(e, 'emoji')}
-                                            className="w-7 h-7 flex items-center justify-center hover:bg-zinc-800 rounded-md transition-all text-sm relative"
-                                        >
-                                            {emoji}
-                                        </button>
+                                if (isEditing) {
+                                    return (
+                                        <SortableHabitItem key={habit.id} habit={habit} isSelected={isSelected} isEditing={true}>
+                                            <form onSubmit={handleSubmit} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-2 shadow-lg flex flex-col gap-2 animate-slide-in">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handlePopoverTrigger(e, 'emoji')}
+                                                        className="w-7 h-7 flex items-center justify-center hover:bg-zinc-800 rounded-md transition-all text-sm relative"
+                                                    >
+                                                        {emoji}
+                                                    </button>
 
-                                        <button
-                                            type="button"
-                                            onClick={(e) => handlePopoverTrigger(e, 'color')}
-                                            className="w-7 h-7 flex items-center justify-center hover:bg-zinc-800 rounded-md transition-all relative"
-                                        >
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                                        </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handlePopoverTrigger(e, 'color')}
+                                                        className="w-7 h-7 flex items-center justify-center hover:bg-zinc-800 rounded-md transition-all relative"
+                                                    >
+                                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                                                    </button>
 
-                                        <input
-                                            autoFocus
-                                            type="text"
-                                            className="flex-1 min-w-0 h-7 bg-zinc-950 px-2 rounded-md text-xs text-white outline-none placeholder:text-zinc-600 border border-zinc-800 focus:border-zinc-600 transition-all"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Escape') {
-                                                    cancelForm();
+                                                    <input
+                                                        autoFocus
+                                                        type="text"
+                                                        className="flex-1 min-w-0 h-7 bg-zinc-950 px-2 rounded-md text-xs text-white outline-none placeholder:text-zinc-600 border border-zinc-800 focus:border-zinc-600 transition-all"
+                                                        value={name}
+                                                        onChange={(e) => setName(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Escape') {
+                                                                cancelForm();
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={cancelForm}
+                                                        className="px-2 py-1 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-all"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        type="submit"
+                                                        disabled={!name.trim()}
+                                                        className="px-3 py-1 bg-white text-black text-[10px] font-bold rounded hover:bg-zinc-200 transition-all"
+                                                    >
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </SortableHabitItem>
+                                    );
+                                }
+
+                                return (
+                                    <SortableHabitItem key={habit.id} habit={habit} isSelected={isSelected}>
+                                        <div
+                                            onClick={() => {
+                                                onSelectHabit(habit.id);
+                                                if (window.matchMedia('(max-width: 768px)').matches) {
+                                                    setIsExpanded(false);
+                                                    setShowMobileHabits(false);
                                                 }
                                             }}
-                                        />
-                                    </div>
-
-                                    <div className="flex justify-end gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={cancelForm}
-                                            className="px-2 py-1 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-all"
+                                            title={habit.name}
+                                            style={{
+                                                borderColor: isSelected ? (habit.color || '#ffffff') : 'transparent'
+                                            }}
+                                            className={clsx(
+                                                "w-full flex items-center gap-3 p-2 rounded-md transition-all duration-200 group text-left relative overflow-hidden cursor-pointer border",
+                                                isSelected
+                                                    ? "bg-zinc-900"
+                                                    : "hover:bg-zinc-900/50 hover:border-zinc-800/50"
+                                            )}
                                         >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={!name.trim()}
-                                            className="px-3 py-1 bg-white text-black text-[10px] font-bold rounded hover:bg-zinc-200 transition-all"
-                                        >
-                                            Save
-                                        </button>
-                                    </div>
-                                </form>
-                            );
-                        }
+                                            {habit.color && (
+                                                <div
+                                                    className="w-1 h-3.5 rounded-full shrink-0 relative z-10"
+                                                    style={{ backgroundColor: habit.color }}
+                                                />
+                                            )}
 
-                        return (
-                            <div
-                                key={habit.id}
-                                onClick={() => {
-                                    onSelectHabit(habit.id);
-                                    if (window.matchMedia('(max-width: 768px)').matches) {
-                                        setIsExpanded(false);
-                                        setShowMobileHabits(false);
-                                    }
-                                }}
-                                title={habit.name}
-                                style={{
-                                    borderColor: isSelected ? (habit.color || '#ffffff') : 'transparent'
-                                }}
-                                className={clsx(
-                                    "w-full flex items-center gap-3 p-2 rounded-md transition-all duration-200 group text-left relative overflow-hidden cursor-pointer border",
-                                    isSelected
-                                        ? "bg-zinc-900"
-                                        : "hover:bg-zinc-900/50 hover:border-zinc-800/50"
-                                )}
-                            >
-                                {habit.color && (
-                                    <div
-                                        className="w-1 h-3.5 rounded-full shrink-0 relative z-10"
-                                        style={{ backgroundColor: habit.color }}
-                                    />
-                                )}
+                                            <span className="text-sm leading-none relative z-10 -ml-0.5">{habit.emoji || '📝'}</span>
 
-                                <span className="text-sm leading-none relative z-10 -ml-0.5">{habit.emoji || '📝'}</span>
+                                            <span className={clsx(
+                                                "flex-1 font-medium text-xs truncate transition-colors relative z-10",
+                                                isSelected ? "text-white" : "text-zinc-400 group-hover:text-zinc-200"
+                                            )}>
+                                                {habit.name}
+                                            </span>
 
-                                <span className={clsx(
-                                    "flex-1 font-medium text-xs truncate transition-colors relative z-10",
-                                    isSelected ? "text-white" : "text-zinc-400 group-hover:text-zinc-200"
-                                )}>
-                                    {habit.name}
-                                </span>
-
-                                <div className={clsx(
-                                    "flex items-center gap-1 transition-opacity relative z-10",
-                                    isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                                )}>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); startEditing(habit); }}
-                                        className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-all"
-                                    >
-                                        <Edit2 size={10} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onDeleteHabit(habit.id); }}
-                                        className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-all"
-                                    >
-                                        <Trash2 size={10} />
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })}
+                                            <div className={clsx(
+                                                "flex items-center gap-1 transition-opacity relative z-10",
+                                                isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                            )}>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); startEditing(habit); }}
+                                                    className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-all"
+                                                >
+                                                    <Edit2 size={10} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onDeleteHabit(habit.id); }}
+                                                    className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-all"
+                                                >
+                                                    <Trash2 size={10} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </SortableHabitItem>
+                                );
+                            })}
+                        </SortableContext>
+                    </DndContext>
                 </div>
             </div>
         </>
@@ -534,94 +649,109 @@ export function Sidebar({
                         // Desktop Override
                         "md:flex-1 md:overflow-y-auto md:p-2 md:h-auto md:max-h-none md:overflow-visible"
                     )}>
-                        {calendars.map(cal => {
-                            const isEditingThis = editingCalendarId === cal.id;
+                        <DndContext
+                            id="calendars-dnd"
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleCalendarDragEnd}
+                        >
+                            <SortableContext
+                                items={calendars.map(c => c.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                {calendars.map(cal => {
+                                    const isEditingThis = editingCalendarId === cal.id;
 
-                            if (isEditingThis && (isExpanded || isEditingThis)) { // Show if editing (force expanded on mobile inherently)
-                                return (
-                                    <form key={cal.id} onSubmit={handleCalendarSubmit} className="px-1 bg-zinc-900 border border-zinc-700/50 rounded p-1 mb-1">
-                                        <div className="flex items-center gap-1 mb-1.5">
-                                            <button
-                                                type="button"
-                                                onClick={(e) => handlePopoverTrigger(e, 'calendar-color')}
-                                                className="w-6 h-6 flex items-center justify-center hover:bg-zinc-800 rounded-md transition-all shrink-0"
-                                            >
-                                                <Folder size={14} style={{ color: calendarColor }} />
-                                            </button>
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                value={calendarNameInput}
-                                                onChange={e => setCalendarNameInput(e.target.value)}
-                                                className="flex-1 min-w-0 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-zinc-700"
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Escape') setEditingCalendarId(null);
+                                    if (isEditingThis && (isExpanded || isEditingThis)) { // Show if editing (force expanded on mobile inherently)
+                                        return (
+                                            <SortableCalendarItem key={cal.id} id={cal.id} isEditing={true}>
+                                                <form onSubmit={handleCalendarSubmit} className="px-1 bg-zinc-900 border border-zinc-700/50 rounded p-1 mb-1">
+                                                    <div className="flex items-center gap-1 mb-1.5">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => handlePopoverTrigger(e, 'calendar-color')}
+                                                            className="w-6 h-6 flex items-center justify-center hover:bg-zinc-800 rounded-md transition-all shrink-0"
+                                                        >
+                                                            <Folder size={14} style={{ color: calendarColor }} />
+                                                        </button>
+                                                        <input
+                                                            autoFocus
+                                                            type="text"
+                                                            value={calendarNameInput}
+                                                            onChange={e => setCalendarNameInput(e.target.value)}
+                                                            className="flex-1 min-w-0 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-zinc-700"
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Escape') setEditingCalendarId(null);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-1 justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setEditingCalendarId(null)}
+                                                            className="px-2 py-0.5 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-all"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            type="submit"
+                                                            className="px-2 py-0.5 bg-white text-black text-[10px] font-bold rounded hover:bg-zinc-200 transition-all"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </SortableCalendarItem>
+                                        );
+                                    }
+
+                                    return (
+                                        <SortableCalendarItem key={cal.id} id={cal.id}>
+                                            <div
+                                                onClick={() => {
+                                                    onSelectCalendar(cal.id);
                                                 }}
-                                            />
-                                        </div>
-                                        <div className="flex gap-1 justify-end">
-                                            <button
-                                                type="button"
-                                                onClick={() => setEditingCalendarId(null)}
-                                                className="px-2 py-0.5 text-[10px] text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-all"
+                                                title={cal.name}
+                                                className={clsx(
+                                                    "w-full flex items-center gap-3 p-2 rounded-md transition-all group cursor-pointer relative",
+                                                    selectedCalendarId === cal.id ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-900/50"
+                                                )}
                                             >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="px-2 py-0.5 bg-white text-black text-[10px] font-bold rounded hover:bg-zinc-200 transition-all"
-                                            >
-                                                Save
-                                            </button>
-                                        </div>
-                                    </form>
-                                );
-                            }
-
-                            return (
-                                <div
-                                    key={cal.id}
-                                    onClick={() => {
-                                        onSelectCalendar(cal.id);
-                                    }}
-                                    title={cal.name}
-                                    className={clsx(
-                                        "w-full flex items-center gap-3 p-2 rounded-md transition-all group cursor-pointer relative",
-                                        selectedCalendarId === cal.id ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-white hover:bg-zinc-900/50"
-                                    )}
-                                >
-                                    {selectedCalendarId === cal.id ? (
-                                        <FolderOpen size={20} className="shrink-0" style={{ color: cal.color || '#ffffff' }} />
-                                    ) : (
-                                        <div className="relative shrink-0 w-5 h-5 flex items-center justify-center">
-                                            <Folder size={20} className="absolute inset-0" style={{ color: cal.color || '#ffffff' }} />
-                                            <span className="relative z-10 text-[9px] font-bold pt-0.5 select-none" style={{ color: cal.color || '#ffffff' }}>{cal.name.charAt(0).toUpperCase()}</span>
-                                        </div>
-                                    )}
-                                    {isExpanded && (
-                                        <>
-                                            <span className="text-xs font-medium truncate flex-1 text-left">{cal.name}</span>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); startEditingCalendar(cal); }}
-                                                    className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white"
-                                                >
-                                                    <Edit2 size={12} />
-                                                </button>
-                                                {calendars.length > 1 && (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); onDeleteCalendar(cal.id); }}
-                                                        className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-red-400"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
+                                                {selectedCalendarId === cal.id ? (
+                                                    <FolderOpen size={20} className="shrink-0" style={{ color: cal.color || '#ffffff' }} />
+                                                ) : (
+                                                    <div className="relative shrink-0 w-5 h-5 flex items-center justify-center">
+                                                        <Folder size={20} className="absolute inset-0" style={{ color: cal.color || '#ffffff' }} />
+                                                        <span className="relative z-10 text-[9px] font-bold pt-0.5 select-none" style={{ color: cal.color || '#ffffff' }}>{cal.name.charAt(0).toUpperCase()}</span>
+                                                    </div>
+                                                )}
+                                                {isExpanded && (
+                                                    <>
+                                                        <span className="text-xs font-medium truncate flex-1 text-left">{cal.name}</span>
+                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); startEditingCalendar(cal); }}
+                                                                className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white"
+                                                            >
+                                                                <Edit2 size={12} />
+                                                            </button>
+                                                            {calendars.length > 1 && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); onDeleteCalendar(cal.id); }}
+                                                                    className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-red-400"
+                                                                >
+                                                                    <Trash2 size={12} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </>
                                                 )}
                                             </div>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                        </SortableCalendarItem>
+                                    );
+                                })}
+                            </SortableContext>
+                        </DndContext>
 
                         {isAddingCalendar && isExpanded && (
                             <form onSubmit={handleCalendarSubmit} className="mt-2 px-1 bg-zinc-900 border border-zinc-700/50 rounded p-1 mb-1">

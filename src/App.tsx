@@ -35,9 +35,11 @@ function AppContent() {
         onAddCalendar={calendarData.addCalendar}
         onEditCalendar={calendarData.editCalendar}
         onDeleteCalendar={calendarData.deleteCalendar}
+        onReorderCalendars={calendarData.reorderCalendars}
         onAddHabit={actions.addHabit}
         onEditHabit={actions.editHabit}
         onDeleteHabit={actions.deleteHabit}
+        onReorderHabits={actions.reorderHabits}
         onSelectHabit={selection.toggleHabitSelection}
         selectedHabitId={selection.selectedHabitId}
       />

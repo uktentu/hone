@@ -3,6 +3,7 @@ export interface CalendarGroup {
     userId?: string; // Firebase user ID for data scoping
     name: string;
     color?: string;
+    order?: number;
 }
 
 export interface Habit {
@@ -12,6 +13,7 @@ export interface Habit {
     name: string;
     emoji?: string;
     color: string;
+    order?: number;
 }
 
 export type HabitLog = Record<string, string[]>; // Date string (YYYY-MM-DD) -> Array of Habit IDs

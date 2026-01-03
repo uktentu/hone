@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
+import pkg from '../../package.json';
 
 interface SplashScreenProps {
     onFinish: () => void;
@@ -49,6 +50,12 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                         alt="Hone"
                         className="w-24 h-24 relative z-10 drop-shadow-2xl"
                     />
+                    <span className={clsx(
+                        "absolute -bottom-2 -right-8 text-[10px] text-zinc-600 font-mono transition-opacity duration-1000 delay-700",
+                        logoVisible ? "opacity-100" : "opacity-0"
+                    )}>
+                        v{pkg.version}
+                    </span>
                 </div>
 
                 {/* Text Animation */}
