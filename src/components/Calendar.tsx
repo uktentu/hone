@@ -62,7 +62,7 @@ export function Calendar({ habits, selectedHabitId, selectedHabitStats, onToggle
     };
 
     return (
-        <main className="flex-1 h-screen overflow-hidden flex flex-col relative bg-zinc-950" aria-label="Calendar view">
+        <main className="flex-1 h-full overflow-hidden flex flex-col relative bg-zinc-950" aria-label="Calendar view">
             {/* Header */}
             <header className="flex flex-col gap-3 px-4 py-3 shrink-0 border-b border-zinc-900 bg-zinc-950">
                 <div className="flex items-center justify-between">

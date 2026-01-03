@@ -512,7 +512,7 @@ export function Sidebar({
 
                                             <div className={clsx(
                                                 "flex items-center gap-1 transition-opacity relative z-10",
-                                                isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                                isSelected ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                             )}>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); startEditing(habit); }}
@@ -728,7 +728,7 @@ export function Sidebar({
                                                 {isExpanded && (
                                                     <>
                                                         <span className="text-xs font-medium truncate flex-1 text-left">{cal.name}</span>
-                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); startEditingCalendar(cal); }}
                                                                 className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white"
