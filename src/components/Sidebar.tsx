@@ -617,13 +617,15 @@ export function Sidebar({
                             <X size={20} className={clsx("md:hidden", !isExpanded && "hidden")} />
                             <Layout size={20} className={clsx(isExpanded && "hidden md:block")} />
                         </button>
-                        <div className={clsx(
-                            "flex items-center gap-2 overflow-hidden transition-all duration-300 flex-1",
-                            // Desktop: Hide when collapsed, Show when expanded
-                            isExpanded ? "md:w-auto md:opacity-100" : "md:w-0 md:opacity-0",
-                            // Mobile: Always visible (Header mode)
-                            "w-auto opacity-100"
-                        )}>
+                        <div
+                            onClick={() => window.location.reload()}
+                            className={clsx(
+                                "flex items-center gap-2 overflow-hidden transition-all duration-300 flex-1 cursor-pointer hover:opacity-80",
+                                // Desktop: Hide when collapsed, Show when expanded
+                                isExpanded ? "md:w-auto md:opacity-100" : "md:w-0 md:opacity-0",
+                                // Mobile: Always visible (Header mode)
+                                "w-auto opacity-100"
+                            )}>
                             <img src="./favicon.png" alt="Logo" className="w-6 h-6 object-contain shrink-0" />
                             <span className="text-sm font-bold text-white tracking-wide truncate">Hone</span>
                         </div>
