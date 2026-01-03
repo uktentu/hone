@@ -4,7 +4,7 @@ A beautiful, modern habit tracking calendar application built with React, TypeSc
 
 ## Features
 
-- 📅 **Calendar Views**: Switch between month and year views to track your habits
+- 📅 **Calendar Views**: Switch between year and graph views to track your habits
 - 🎨 **Customizable Habits**: Create habits with custom names, emojis, and colors
 - �️ **Drag & Drop**: Reorder habits and calendars with ease
 - ☁️ **Cloud Sync**: Real-time data synchronization with Firebase
