@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, Link as LinkIcon, AlertCircle, CheckCircle, Shield, ArrowLeft, LogOut, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
+import { getFirebaseErrorMessage } from '../utils/errorMessages';
 
 interface SettingsPageProps {
     onBack: () => void;
@@ -101,12 +102,13 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             setConfirmPassword('');
             setShowUpdatePassword(false);
         } catch (error: unknown) {
-            const err = error as Error;
-            console.error('Update password error:', err);
-            const msg = err.message.includes('auth/invalid-credential')
-                ? 'Incorrect current password.'
-                : 'Failed to update password. ' + err.message;
-            setMessage({ type: 'error', text: msg });
+            console.error('Update password error:', error);
+            const msg = getFirebaseErrorMessage(error);
+            // If it's a generic "Invalid email or password", clarify it's the current password
+            const finalText = msg === 'Invalid email or password' || msg === 'Incorrect password'
+                ? 'Incorrect current password'
+                : msg;
+            setMessage({ type: 'error', text: finalText });
         } finally {
             setIsLoading(false);
         }
