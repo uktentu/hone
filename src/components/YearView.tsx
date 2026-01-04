@@ -60,6 +60,9 @@ function YearDayCell({
     isHabitCompleted: (date: Date, habitId: string) => boolean;
     setHoveredTooltip: (t: { content: React.ReactNode; triggerRect: DOMRect } | null) => void;
 }) {
+    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+    const isLongPress = useRef(false);
+
     const isCurrentMonth = isSameMonth(day, month);
     if (!isCurrentMonth) return <div />;
 
@@ -81,9 +84,6 @@ function YearDayCell({
     const title = completedNames
         ? `${format(day, 'MMM d, yyyy')}\n• ${completedNames}`
         : format(day, 'MMM d, yyyy');
-
-    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-    const isLongPress = useRef(false);
 
     const handleTouchStart = (e: React.TouchEvent) => {
         isLongPress.current = false;
