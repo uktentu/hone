@@ -7,6 +7,7 @@ import { SettingsPage } from './components/SettingsPage';
 import { SplashScreen } from './components/SplashScreen';
 import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { isSignInWithEmailLink, getAuth } from 'firebase/auth';
 import { useHabits } from './hooks/useHabits';
 
 import { OnboardingTour } from './components/OnboardingTour';
@@ -15,6 +16,9 @@ function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const { currentUser } = useAuth();
   const [currentView, setCurrentView] = useState<'calendar' | 'settings'>('calendar');
+  const [completingSignup, setCompletingSignup] = useState(() => {
+    return isSignInWithEmailLink(getAuth(), window.location.href);
+  });
 
   const {
     habitData,
@@ -27,8 +31,8 @@ function AppContent() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  if (!currentUser) {
-    return <AuthPage />;
+  if (!currentUser || completingSignup) {
+    return <AuthPage onComplete={() => setCompletingSignup(false)} />;
   }
 
   return (

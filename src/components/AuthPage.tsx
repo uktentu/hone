@@ -6,7 +6,11 @@ import { AlertCircle, Mail, Lock, Sparkles, CheckCircle } from 'lucide-react';
 import { getFirebaseErrorMessage } from '../utils/errorMessages';
 import { isSignInWithEmailLink, getAuth } from 'firebase/auth';
 
-export function AuthPage() {
+interface AuthPageProps {
+    onComplete?: () => void;
+}
+
+export function AuthPage({ onComplete }: AuthPageProps) {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -58,6 +62,9 @@ export function AuthPage() {
                 setLoading(true);
                 await updateUserPassword(password);
                 // User is now fully signed up and logged in
+                if (onComplete) {
+                    onComplete();
+                }
             } catch (err) {
                 console.error('Auth Error:', err);
                 setError(getFirebaseErrorMessage(err));
@@ -153,6 +160,9 @@ export function AuthPage() {
                             <p className="text-zinc-400 text-sm">
                                 We sent a sign-in link to <span className="text-white font-medium">{email}</span>.
                                 Click the link to verify your account.
+                            </p>
+                            <p className="text-zinc-500 text-xs">
+                                (Can't find it? Check your spam folder)
                             </p>
                             <button
                                 onClick={() => setLinkSent(false)}
