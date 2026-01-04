@@ -28,11 +28,11 @@ function AppContent() {
     actions
   } = useHabits();
 
+  const [showMobileHabits, setShowMobileHabits] = useState(false);
+
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
-
-  const [showMobileHabits, setShowMobileHabits] = useState(false);
 
   // If showing welcome, it takes precedence over the main app layout
   if (showWelcome) {
