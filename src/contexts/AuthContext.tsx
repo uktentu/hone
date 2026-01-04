@@ -13,6 +13,9 @@ import {
     sendPasswordResetEmail,
     updatePassword,
     sendEmailVerification,
+    sendSignInLinkToEmail,
+    isSignInWithEmailLink,
+    signInWithEmailLink,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -28,6 +31,8 @@ interface AuthContextType {
     resetPassword: (email: string) => Promise<void>;
     updateUserPassword: (password: string) => Promise<void>;
     verifyEmail: () => Promise<void>;
+    sendLoginLink: (email: string) => Promise<void>;
+    completeLoginWithLink: (email: string, href: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -86,6 +91,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await sendEmailVerification(currentUser);
     }
 
+    async function sendLoginLink(email: string) {
+        const actionCodeSettings = {
+            url: window.location.origin, // Redirect back to usage root
+            handleCodeInApp: true,
+        };
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        window.localStorage.setItem('emailForSignIn', email);
+    }
+
+    async function completeLoginWithLink(email: string, href: string) {
+        if (isSignInWithEmailLink(auth, href)) {
+            await signInWithEmailLink(auth, email, href);
+            window.localStorage.removeItem('emailForSignIn');
+        }
+    }
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
@@ -107,6 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetPassword,
         updateUserPassword,
         verifyEmail,
+        sendLoginLink,
+        completeLoginWithLink,
     };
 
     return (
