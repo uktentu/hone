@@ -517,6 +517,7 @@ export function Sidebar({
                                                 const isMobile = window.matchMedia('(max-width: 768px)').matches;
                                                 const toggleState = e.ctrlKey || e.metaKey || isMultiSelectMode;
                                                 onSelectHabit(habit.id, toggleState);
+                                                onNavigate?.('calendar');
 
                                                 if (isMobile && !isMultiSelectMode && !toggleState) {
                                                     setIsExpanded(false);
@@ -775,6 +776,7 @@ export function Sidebar({
                                             <div
                                                 onClick={() => {
                                                     onSelectCalendar(cal.id);
+                                                    onNavigate?.('calendar');
                                                 }}
                                                 title={cal.name}
                                                 className={clsx(
