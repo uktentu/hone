@@ -15,16 +15,21 @@ export function Tooltip({ content, triggerRect, isVisible }: TooltipProps) {
             // Calculate position
             const padding = 8;
 
-            let x = triggerRect.left + (triggerRect.width / 2);
-            let y = triggerRect.top - padding; // Default to top
+            // Default position (above)
+            let y = triggerRect.top - padding;
 
-            // Adjust if too close to edges (basic collision detection)
+            // Flip to below if too close to top edge
             if (y < 50) {
-                // Flip to bottom if close to top
                 y = triggerRect.bottom + padding;
             }
 
-            setPosition({ x, y });
+            // Calculate X (centered with bounds)
+            const x = Math.min(Math.max(0, triggerRect.left + triggerRect.width / 2 - 100), window.innerWidth - 200);
+
+            // Use setTimeout to avoid synchronous state update during render phase
+            setTimeout(() => {
+                setPosition({ x, y });
+            }, 0);
         }
     }, [triggerRect, isVisible]);
 

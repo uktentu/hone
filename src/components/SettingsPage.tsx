@@ -28,8 +28,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         try {
             await linkGoogle();
             setMessage({ type: 'success', text: 'Google account linked successfully!' });
-        } catch (error: any) {
-            setMessage({ type: 'error', text: 'Failed to link Google account. ' + error.message });
+        } catch (error: unknown) {
+            const err = error as Error;
+            setMessage({ type: 'error', text: 'Failed to link Google account. ' + err.message });
         } finally {
             setIsLoading(false);
         }
@@ -42,8 +43,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             await unlinkProvider(providerId);
             setMessage({ type: 'success', text: 'Account unlinked successfully.' });
             setConfirmUnlink(null);
-        } catch (error: any) {
-            setMessage({ type: 'error', text: 'Failed to unlink account. ' + error.message });
+        } catch (error: unknown) {
+            const err = error as Error;
+            setMessage({ type: 'error', text: 'Failed to unlink account. ' + err.message });
         } finally {
             setIsLoading(false);
         }
@@ -56,8 +58,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         try {
             await resetPassword(currentUser.email);
             setMessage({ type: 'success', text: 'Password reset email sent!' });
-        } catch (error: any) {
-            setMessage({ type: 'error', text: 'Failed to send reset email. ' + error.message });
+        } catch (error: unknown) {
+            const err = error as Error;
+            setMessage({ type: 'error', text: 'Failed to send reset email. ' + err.message });
         } finally {
             setIsLoading(false);
         }
@@ -81,7 +84,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             setMessage({ type: 'success', text: 'Password updated successfully!' });
             setNewPassword('');
             setConfirmPassword('');
-        } catch (error: any) {
+        } catch {
             setMessage({ type: 'error', text: 'Failed to update password. You may need to re-login first.' });
         } finally {
             setIsLoading(false);

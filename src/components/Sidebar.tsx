@@ -30,7 +30,8 @@ interface SidebarProps {
 }
 
 // Sortable Item Component
-function SortableHabitItem({ habit, isEditing, children }: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SortableHabitItem({ habit, isEditing, children }: { habit: any, isEditing?: boolean, isSelected?: boolean, children: React.ReactNode }) {
     const {
         attributes,
         listeners,
@@ -64,7 +65,7 @@ function SortableHabitItem({ habit, isEditing, children }: any) {
 }
 
 // Reuse sortable item logic for calendars
-function SortableCalendarItem({ id, isEditing, children }: any) {
+function SortableCalendarItem({ id, isEditing, children }: { id: string, isEditing?: boolean, children: React.ReactNode }) {
     const {
         attributes,
         listeners,

@@ -10,7 +10,7 @@ export function OnboardingTour() {
         // Check if user has seen onboarding
         const hasSeenOnboarding = localStorage.getItem('hone_has_seen_onboarding');
         if (!hasSeenOnboarding && currentUser) {
-            setRun(true);
+            setTimeout(() => setRun(true), 0);
         }
     }, [currentUser]);
 

@@ -1,5 +1,5 @@
-export function getFirebaseErrorMessage(error: any): string {
-    const code = error?.code || '';
+export function getFirebaseErrorMessage(error: unknown): string {
+    const code = (error as { code?: string })?.code || '';
     const messages: Record<string, string> = {
         'auth/invalid-credential': 'Invalid email or password',
         'auth/user-not-found': 'No account found with this email',

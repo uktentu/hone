@@ -46,7 +46,7 @@ export function AuthPage({ onComplete }: AuthPageProps) {
                     });
             }
         }
-    }, []);
+    }, [completeLoginWithLink]);
 
 
     async function handleSubmit(e: FormEvent) {

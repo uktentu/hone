@@ -32,7 +32,11 @@ function AppContent() {
   }
 
   if (!currentUser || completingSignup) {
-    return <AuthPage onComplete={() => setCompletingSignup(false)} />;
+    return <AuthPage onComplete={() => {
+      // Clear sensitive URL parameters (oobCode, apiKey, etc.) from the address bar
+      window.history.replaceState(null, '', window.location.pathname);
+      setCompletingSignup(false);
+    }} />;
   }
 
   return (
