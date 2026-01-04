@@ -52,7 +52,7 @@ export function AuthPage() {
                     <div className="relative mb-4">
                         <div className="absolute inset-0 bg-white/10 blur-2xl rounded-full scale-150 animate-pulse" />
                         <img
-                            src="./favicon.png"
+                            src="./favicon_header.png"
                             alt="Hone"
                             className="w-16 h-16 relative z-10 drop-shadow-2xl"
                         />

@@ -46,7 +46,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                 <div className="relative">
                     <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full scale-150 animate-pulse" />
                     <img
-                        src="./favicon.png"
+                        src="./favicon_header.png"
                         alt="Hone"
                         className="w-24 h-24 relative z-10 drop-shadow-2xl"
                     />
