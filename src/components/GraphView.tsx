@@ -56,11 +56,14 @@ function GraphDayCell({
         isLongPress.current = false;
         touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
 
+        // Capture rect synchronously to avoid stale event access
+        const rect = e.currentTarget.getBoundingClientRect();
+
         const timer = setTimeout(() => {
             isLongPress.current = true;
             setHoveredTooltip({
                 content: tooltipText,
-                triggerRect: e.currentTarget.getBoundingClientRect()
+                triggerRect: rect
             });
             if (navigator.vibrate) navigator.vibrate(50);
         }, 500);

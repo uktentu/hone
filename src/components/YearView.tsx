@@ -87,11 +87,15 @@ function YearDayCell({
 
     const handleTouchStart = (e: React.TouchEvent) => {
         isLongPress.current = false;
+
+        // Capture rect synchronously
+        const rect = e.currentTarget.getBoundingClientRect();
+
         const timer = setTimeout(() => {
             isLongPress.current = true;
             setHoveredTooltip({
                 content: title,
-                triggerRect: e.currentTarget.getBoundingClientRect()
+                triggerRect: rect
             });
         }, 500);
         setLongPressTimer(timer);
