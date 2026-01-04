@@ -66,7 +66,7 @@ export function OnboardingTour({ setShowMobileHabits }: OnboardingTourProps) {
                 content: 'Open your habits menu here to add or edit habits.',
             },
             {
-                target: '#tour-mobile-multiselect',
+                target: '#mobile-habits-popup #tour-mobile-multiselect',
                 content: 'Use this to check off multiple habits at once.',
             },
             {
@@ -124,6 +124,9 @@ export function OnboardingTour({ setShowMobileHabits }: OnboardingTourProps) {
             showProgress
             showSkipButton
             callback={handleJoyrideCallback}
+            locale={{
+                last: 'Finish',
+            }}
             styles={{
                 options: {
                     arrowColor: '#18181b', // zinc-950

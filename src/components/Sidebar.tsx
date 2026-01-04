@@ -947,10 +947,12 @@ export function Sidebar({
             </div>
 
             {/* Mobile Habit Popup Panel (Independent Overlay) */}
-            <div className={clsx(
-                "md:hidden fixed inset-4 z-[105] rounded-xl border border-zinc-800 shadow-2xl animate-in zoom-in-95 bg-zinc-950 flex flex-col",
-                showMobileHabits ? "block" : "hidden"
-            )}>
+            <div
+                id="mobile-habits-popup"
+                className={clsx(
+                    "md:hidden fixed inset-4 z-[105] rounded-xl border border-zinc-800 shadow-2xl animate-in zoom-in-95 bg-zinc-950 flex flex-col",
+                    showMobileHabits ? "block" : "hidden"
+                )}>
                 <button
                     onClick={() => onToggleMobileHabits(false)}
                     className="absolute top-2 right-2 p-1 bg-zinc-900 rounded-full text-zinc-400 z-50 md:hidden"
