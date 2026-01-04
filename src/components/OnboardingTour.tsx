@@ -18,25 +18,50 @@ export function OnboardingTour({ setShowMobileHabits }: OnboardingTourProps) {
         }
     }, [currentUser]);
 
+    const [stepIndex, setStepIndex] = useState(0);
+
     const handleJoyrideCallback = (data: CallBackProps) => {
-        const { status, type, index } = data;
+        const { action, index, status, type } = data;
         const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+        const isMobile = window.innerWidth < 768;
 
         if (finishedStatuses.includes(status)) {
             setRun(false);
             localStorage.setItem('hone_has_seen_onboarding', 'true');
+            if (isMobile && setShowMobileHabits) {
+                setShowMobileHabits(false); // Ensure popup closes on finish/skip
+            }
+            return;
         }
 
-        // Mobile Tour Logic: Open Habits Menu on Step 2 (Index 2) -> 3
-        const isMobile = window.innerWidth < 768;
-        if (isMobile && setShowMobileHabits) {
-            // If we are moving FROM step 2 (Habits Trigger) TO step 3 (Multi-select), open the menu
-            // Step 2 is index 2.
-            if (index === 2 && type === EVENTS.STEP_AFTER) {
-                setShowMobileHabits(true);
+        if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+            // Mobile Transitions
+            if (isMobile && setShowMobileHabits) {
+                // Moving from Step 2 (Trigger) to Step 3 (Multi-select)
+                // We need to OPEN the popup and WAIT for animation
+                if (index === 2) {
+                    setShowMobileHabits(true);
+                    // Add delay to allow popup animation to finish before showing next step
+                    setTimeout(() => {
+                        setStepIndex(index + 1);
+                    }, 400);
+                    return; // Stop default progression
+                }
+
+                // Moving from Step 4 (Reset) to Step 5 (First Calendar Step)
+                // We need to CLOSE the popup so it doesn't block the view
+                if (index === 4) {
+                    setShowMobileHabits(false);
+                    // Small delay to allow closing animation? Optional, but good practice.
+                    setTimeout(() => {
+                        setStepIndex(index + 1);
+                    }, 200);
+                    return;
+                }
             }
-            // Close it if we skip or strictly finish? Or just leave it?
-            // Leaving it is fine for user to explore.
+
+            // Default progression for other steps
+            setStepIndex(index + (action === 'prev' ? -1 : 1));
         }
     };
 
@@ -120,6 +145,7 @@ export function OnboardingTour({ setShowMobileHabits }: OnboardingTourProps) {
         <Joyride
             steps={steps}
             run={run}
+            stepIndex={stepIndex}
             continuous
             showProgress
             showSkipButton
