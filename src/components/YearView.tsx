@@ -42,6 +42,125 @@ function getTextColorForBackground(hexColor: string | undefined): string {
     return luminance > 0.5 ? 'black' : 'white';
 }
 
+// Sub-component for individual day cell in YearView
+function YearDayCell({
+    day,
+    month,
+    habits,
+    selectedHabitIds,
+    onToggleHabit,
+    isHabitCompleted,
+    setHoveredTooltip
+}: {
+    day: Date;
+    month: Date;
+    habits: Habit[];
+    selectedHabitIds: string[];
+    onToggleHabit: (date: Date, habitId: string) => void;
+    isHabitCompleted: (date: Date, habitId: string) => boolean;
+    setHoveredTooltip: (t: { content: React.ReactNode; triggerRect: DOMRect } | null) => void;
+}) {
+    const isCurrentMonth = isSameMonth(day, month);
+    if (!isCurrentMonth) return <div />;
+
+    const completedHabitIds = selectedHabitIds.filter(id => isHabitCompleted(day, id));
+    const completedHabitId = completedHabitIds[0];
+    const completedHabit = completedHabitId ? habits.find(h => h.id === completedHabitId) : null;
+    const isCompleted = !!completedHabit;
+
+    const isMultiSelect = selectedHabitIds.length > 1;
+    const displayColor = isMultiSelect ? '#ffffff' : completedHabit?.color;
+
+    const isCurrentDay = isToday(day);
+    const textColor = isCompleted ? getTextColorForBackground(displayColor) : undefined;
+
+    const completedNames = completedHabitIds
+        .map(id => habits.find(h => h.id === id)?.name)
+        .filter(Boolean)
+        .join('\n• ');
+    const title = completedNames
+        ? `${format(day, 'MMM d, yyyy')}\n• ${completedNames}`
+        : format(day, 'MMM d, yyyy');
+
+    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+    const isLongPress = useRef(false);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        isLongPress.current = false;
+        const timer = setTimeout(() => {
+            isLongPress.current = true;
+            setHoveredTooltip({
+                content: title,
+                triggerRect: e.currentTarget.getBoundingClientRect()
+            });
+        }, 500);
+        setLongPressTimer(timer);
+    };
+
+    const handleTouchEnd = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            setLongPressTimer(null);
+        }
+        if (isLongPress.current) {
+            setTimeout(() => setHoveredTooltip(null), 1500);
+        }
+    };
+
+    const handleTouchMove = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            setLongPressTimer(null);
+        }
+    };
+
+    return (
+        <button
+            onMouseEnter={(e) => {
+                if (window.matchMedia('(hover: hover)').matches) {
+                    setHoveredTooltip({
+                        content: title,
+                        triggerRect: e.currentTarget.getBoundingClientRect()
+                    });
+                }
+            }}
+            onMouseLeave={() => setHoveredTooltip(null)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+            onContextMenu={(e) => e.preventDefault()}
+            onClick={(e) => {
+                if (isLongPress.current) {
+                    e.preventDefault();
+                    return;
+                }
+                onToggleHabit(day, selectedHabitIds[0]);
+            }}
+            className="group relative w-full aspect-square flex items-center justify-center rounded-sm hover:bg-zinc-800/30 transition-colors select-none touch-manipulation"
+            style={{
+                WebkitTapHighlightColor: 'transparent',
+                WebkitTouchCallout: 'none',
+                userSelect: 'none'
+            }}
+        >
+            <span
+                className={clsx(
+                    "w-full h-full flex items-center justify-center text-[9px] rounded-lg transition-all duration-200 pointer-events-none",
+                    isCompleted && "font-bold shadow-sm",
+                    !isCompleted && "text-zinc-500 hover:text-white",
+                    isCurrentDay && !isCompleted && "text-white font-bold bg-zinc-800"
+                )}
+                style={{
+                    backgroundColor: isCompleted ? displayColor : undefined,
+                    color: isCompleted ? textColor : undefined
+                }}
+            >
+                {format(day, 'd')}
+            </span>
+        </button>
+    );
+}
+
 export function YearView({ year, habits, selectedHabitIds, onToggleHabit, isHabitCompleted }: YearViewProps) {
     const yearStart = startOfYear(new Date(year, 0, 1));
     const yearEnd = endOfYear(yearStart);
@@ -92,108 +211,18 @@ export function YearView({ year, habits, selectedHabitIds, onToggleHabit, isHabi
                             </div>
 
                             <div className="grid grid-cols-7 gap-px md:gap-[2px]">
-                                {days.map(day => {
-                                    const isCurrentMonth = isSameMonth(day, month);
-                                    if (!isCurrentMonth) return <div key={day.toISOString()} />;
-
-                                    // Find which of the selected habits are completed on this day
-                                    // We use the first completed one for color priority
-                                    const completedHabitIds = selectedHabitIds.filter(id => isHabitCompleted(day, id));
-                                    const completedHabitId = completedHabitIds[0];
-                                    const completedHabit = completedHabitId ? habits.find(h => h.id === completedHabitId) : null;
-                                    const isCompleted = !!completedHabit;
-
-                                    // Determine display color: White if multiple selected, specific color if single
-                                    const isMultiSelect = selectedHabitIds.length > 1;
-                                    const displayColor = isMultiSelect ? '#ffffff' : completedHabit?.color;
-
-                                    const isCurrentDay = isToday(day);
-                                    const textColor = isCompleted ? getTextColorForBackground(displayColor) : undefined;
-
-                                    // Construct title for tooltip
-                                    const completedNames = completedHabitIds
-                                        .map(id => habits.find(h => h.id === id)?.name)
-                                        .filter(Boolean)
-                                        .join('\n• ');
-                                    const title = completedNames
-                                        ? `${format(day, 'MMM d, yyyy')}\n• ${completedNames}`
-                                        : format(day, 'MMM d, yyyy');
-
-                                    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-                                    const isLongPress = useRef(false);
-
-                                    const handleTouchStart = (e: React.TouchEvent) => {
-                                        isLongPress.current = false;
-                                        const timer = setTimeout(() => {
-                                            isLongPress.current = true;
-                                            setHoveredTooltip({
-                                                content: title,
-                                                triggerRect: e.currentTarget.getBoundingClientRect()
-                                            });
-                                        }, 500); // 500ms long press
-                                        setLongPressTimer(timer);
-                                    };
-
-                                    const handleTouchEnd = () => {
-                                        if (longPressTimer) {
-                                            clearTimeout(longPressTimer);
-                                            setLongPressTimer(null);
-                                        }
-                                        // Delay hiding tooltip slightly so user can read it
-                                        if (isLongPress.current) {
-                                            setTimeout(() => setHoveredTooltip(null), 1500);
-                                        }
-                                    };
-
-                                    return (
-                                        <button
-                                            key={day.toISOString()}
-                                            // Mouse interactions
-                                            onMouseEnter={(e) => {
-                                                if (window.matchMedia('(hover: hover)').matches) {
-                                                    setHoveredTooltip({
-                                                        content: title,
-                                                        triggerRect: e.currentTarget.getBoundingClientRect()
-                                                    });
-                                                }
-                                            }}
-                                            onMouseLeave={() => setHoveredTooltip(null)}
-
-                                            // Touch interactions
-                                            onTouchStart={handleTouchStart}
-                                            onTouchEnd={handleTouchEnd}
-
-                                            // Click/Tap Logic
-                                            onClick={(e) => {
-                                                // Prevent toggle if it was a long press
-                                                if (isLongPress.current) {
-                                                    e.preventDefault();
-                                                    return;
-                                                }
-                                                onToggleHabit(day, selectedHabitIds[0]);
-                                            }}
-                                            className="group relative w-full aspect-square flex items-center justify-center rounded-sm hover:bg-zinc-800/30 transition-colors select-none touch-manipulation" // Added select-none and touch-manipulation
-                                            style={{
-                                                WebkitTapHighlightColor: 'transparent'
-                                            }}
-                                        >
-                                            <span
-                                                className={clsx(
-                                                    "w-full h-full flex items-center justify-center text-[9px] rounded-lg transition-all duration-200 pointer-events-none", // pointer-events-none to let button handle events
-                                                    isCompleted && "font-bold shadow-sm",
-                                                    !isCompleted && "text-zinc-500 hover:text-white",
-                                                    isCurrentDay && !isCompleted && "text-white font-bold bg-zinc-800"
-                                                )}
-                                                style={{
-                                                    backgroundColor: isCompleted ? displayColor : undefined,
-                                                    color: isCompleted ? textColor : undefined
-                                                }}
-                                            >
-                                                {format(day, 'd')}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                                {days.map(day => (
+                                    <YearDayCell
+                                        key={day.toISOString()}
+                                        day={day}
+                                        month={month}
+                                        habits={habits}
+                                        selectedHabitIds={selectedHabitIds}
+                                        onToggleHabit={onToggleHabit}
+                                        isHabitCompleted={isHabitCompleted}
+                                        setHoveredTooltip={setHoveredTooltip}
+                                    />
+                                ))}
                             </div>
                         </div>
                     )

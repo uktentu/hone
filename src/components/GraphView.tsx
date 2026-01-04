@@ -12,6 +12,112 @@ interface GraphViewProps {
     logs: HabitLog;
 }
 
+// Sub-component for individual day cell
+function GraphDayCell({
+    day,
+    habits,
+    selectedHabitIds,
+    primaryHabit,
+    isHabitCompleted,
+    setHoveredTooltip
+}: {
+    day: Date;
+    habits: Habit[];
+    selectedHabitIds: string[];
+    primaryHabit: Habit;
+    isHabitCompleted: (date: Date, habitId: string) => boolean;
+    setHoveredTooltip: (t: { content: React.ReactNode; triggerRect: DOMRect } | null) => void;
+}) {
+    const isMultiSelect = selectedHabitIds.length > 1;
+    const habitsCompletedToday = selectedHabitIds.filter(id => isHabitCompleted(day, id)).length;
+    const isCompleted = habitsCompletedToday > 0;
+    const intensity = selectedHabitIds.length > 0 ? habitsCompletedToday / selectedHabitIds.length : 0;
+    const displayColor = isMultiSelect ? '#ffffff' : primaryHabit.color;
+
+    // Opacity Logic
+    const opacity = isCompleted
+        ? (isMultiSelect ? 0.2 + (intensity * 0.8) : 1)
+        : 1;
+
+    // Tooltip logic
+    const completedHabitIds = selectedHabitIds.filter(id => isHabitCompleted(day, id));
+    const completedNames = completedHabitIds
+        .map(id => habits.find(h => h.id === id)?.name)
+        .filter(Boolean)
+        .join('\n• ');
+
+    const tooltipText = `${format(day, 'EEEE, MMM d, yyyy')}\n${habitsCompletedToday}/${selectedHabitIds.length} completed${completedNames ? ':\n• ' + completedNames : ''}`;
+
+    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+    const isLongPress = useRef(false);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        isLongPress.current = false;
+        const timer = setTimeout(() => {
+            isLongPress.current = true;
+            setHoveredTooltip({
+                content: tooltipText,
+                triggerRect: e.currentTarget.getBoundingClientRect()
+            });
+        }, 500);
+        setLongPressTimer(timer);
+    };
+
+    const handleTouchEnd = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            setLongPressTimer(null);
+        }
+        if (isLongPress.current) {
+            setTimeout(() => setHoveredTooltip(null), 1500);
+        }
+    };
+
+    const handleTouchMove = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            setLongPressTimer(null);
+        }
+    };
+
+    return (
+        <div
+            onMouseEnter={(e) => {
+                if (window.matchMedia('(hover: hover)').matches) {
+                    setHoveredTooltip({
+                        content: tooltipText,
+                        triggerRect: e.currentTarget.getBoundingClientRect()
+                    });
+                }
+            }}
+            onMouseLeave={() => setHoveredTooltip(null)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+            onContextMenu={(e) => e.preventDefault()}
+            onClick={(e) => {
+                if (isLongPress.current) {
+                    e.preventDefault();
+                    return;
+                }
+            }}
+            className={clsx(
+                "w-3 h-3 rounded-sm transition-all duration-200 hover:scale-125 hover:z-10 relative select-none touch-manipulation",
+                !isCompleted && "bg-zinc-900/50 border border-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800",
+                isCompleted && "shadow-[0_0_8px_-2px_var(--color)]"
+            )}
+            style={{
+                backgroundColor: isCompleted ? displayColor : undefined,
+                '--color': isCompleted ? displayColor : undefined,
+                opacity: opacity,
+                WebkitTapHighlightColor: 'transparent',
+                WebkitTouchCallout: 'none',
+                userSelect: 'none'
+            } as React.CSSProperties}
+        />
+    );
+}
+
 export function GraphView({ year, habits, selectedHabitIds, isHabitCompleted, logs }: GraphViewProps) {
     const yearStart = startOfYear(new Date(year, 0, 1));
     const yearEnd = endOfYear(yearStart);
@@ -184,87 +290,15 @@ export function GraphView({ year, habits, selectedHabitIds, isHabitCompleted, lo
                             {allCells.map((day, idx) => {
                                 if (!day) return <div key={`empty-${idx}`} className="w-3 h-3" />;
 
-                                // Calculate intensity: How many of the selected habits were completed?
-                                const habitsCompletedToday = selectedHabitIds.filter(id => isHabitCompleted(day, id)).length;
-                                const isCompleted = habitsCompletedToday > 0;
-                                const intensity = selectedHabitIds.length > 0 ? habitsCompletedToday / selectedHabitIds.length : 0;
-
-                                // Visuals: Use White for multi-select, Primary Color for single select
-                                const isMultiSelect = selectedHabitIds.length > 1;
-                                const displayColor = isMultiSelect ? '#ffffff' : primaryHabit.color;
-
-                                // Opacity Logic:
-                                // Multi-Select: Scale from 0.2 (dim) to 1.0 (bright) based on intensity
-                                // Single-Select: Always 1.0 (since intensity is always 1 for completed single habit)
-                                const opacity = isCompleted
-                                    ? (isMultiSelect ? 0.2 + (intensity * 0.8) : 1)
-                                    : 1; // Empty cells handle opacity via class
-
-                                // Tooltip logic
-                                const completedHabitIds = selectedHabitIds.filter(id => isHabitCompleted(day, id));
-                                const completedNames = completedHabitIds
-                                    .map(id => habits.find(h => h.id === id)?.name)
-                                    .filter(Boolean)
-                                    .join('\n• ');
-
-                                const tooltipText = `${format(day, 'EEEE, MMM d, yyyy')}\n${habitsCompletedToday}/${selectedHabitIds.length} completed${completedNames ? ':\n• ' + completedNames : ''}`;
-
-                                const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-                                const isLongPress = useRef(false);
-
-                                const handleTouchStart = (e: React.TouchEvent) => {
-                                    isLongPress.current = false;
-                                    const timer = setTimeout(() => {
-                                        isLongPress.current = true;
-                                        setHoveredTooltip({
-                                            content: tooltipText,
-                                            triggerRect: e.currentTarget.getBoundingClientRect()
-                                        });
-                                    }, 500);
-                                    setLongPressTimer(timer);
-                                };
-
-                                const handleTouchEnd = () => {
-                                    if (longPressTimer) {
-                                        clearTimeout(longPressTimer);
-                                        setLongPressTimer(null);
-                                    }
-                                    if (isLongPress.current) {
-                                        setTimeout(() => setHoveredTooltip(null), 1500);
-                                    }
-                                };
-
                                 return (
-                                    <div
+                                    <GraphDayCell
                                         key={day.toISOString()}
-                                        onMouseEnter={(e) => {
-                                            if (window.matchMedia('(hover: hover)').matches) {
-                                                setHoveredTooltip({
-                                                    content: tooltipText,
-                                                    triggerRect: e.currentTarget.getBoundingClientRect()
-                                                });
-                                            }
-                                        }}
-                                        onMouseLeave={() => setHoveredTooltip(null)}
-                                        onTouchStart={handleTouchStart}
-                                        onTouchEnd={handleTouchEnd}
-                                        onClick={(e) => {
-                                            if (isLongPress.current) {
-                                                e.preventDefault();
-                                                return;
-                                            }
-                                        }}
-                                        className={clsx(
-                                            "w-3 h-3 rounded-sm transition-all duration-200 hover:scale-125 hover:z-10 relative select-none touch-manipulation",
-                                            !isCompleted && "bg-zinc-900/50 border border-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800",
-                                            isCompleted && "shadow-[0_0_8px_-2px_var(--color)]"
-                                        )}
-                                        style={{
-                                            backgroundColor: isCompleted ? displayColor : undefined,
-                                            '--color': isCompleted ? displayColor : undefined,
-                                            opacity: opacity,
-                                            WebkitTapHighlightColor: 'transparent'
-                                        } as React.CSSProperties}
+                                        day={day}
+                                        habits={habits}
+                                        selectedHabitIds={selectedHabitIds}
+                                        primaryHabit={primaryHabit}
+                                        isHabitCompleted={isHabitCompleted}
+                                        setHoveredTooltip={setHoveredTooltip}
                                     />
                                 );
                             })}
