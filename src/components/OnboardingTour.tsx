@@ -94,8 +94,8 @@ export function OnboardingTour() {
         },
         ...(!isMobile ? [
             {
-                target: '#tour-desktop-settings',
-                content: 'Manage your account, password, and preferences here.',
+                target: '#tour-user-footer',
+                content: 'Access your account settings and logout here.',
             }
         ] : [])
     ];

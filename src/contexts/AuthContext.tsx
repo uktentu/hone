@@ -36,6 +36,8 @@ interface AuthContextType {
     sendLoginLink: (email: string) => Promise<void>;
     completeLoginWithLink: (email: string, href: string) => Promise<void>;
     reauthenticateUser: (password: string) => Promise<void>;
+    sendOtp: (email: string) => Promise<void>;
+    verifyOtp: (email: string, otp: string, password?: string) => Promise<{ success: boolean; isNewUser?: boolean }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,6 +128,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return unsubscribe;
     }, []);
 
+    async function sendOtp(email: string) {
+        const res = await fetch('/api/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to send OTP');
+        }
+    }
+
+    async function verifyOtp(email: string, otp: string, password?: string) {
+        const res = await fetch('/api/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || 'Failed to verify OTP');
+        }
+        // Force refresh token to update emailVerified status
+        if (currentUser) {
+            await currentUser.reload();
+            setCurrentUser({ ...auth.currentUser! }); // Trigger re-render
+        }
+        return data;
+    }
+
     const value: AuthContextType = {
         currentUser,
         loading,
@@ -141,6 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sendLoginLink,
         completeLoginWithLink,
         reauthenticateUser,
+        sendOtp,
+        verifyOtp,
     };
 
     return (

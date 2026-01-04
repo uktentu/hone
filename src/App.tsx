@@ -9,11 +9,12 @@ import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { isSignInWithEmailLink, getAuth } from 'firebase/auth';
 import { useHabits } from './hooks/useHabits';
-
 import { OnboardingTour } from './components/OnboardingTour';
+import { WelcomePage } from './components/WelcomePage';
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false); // New State
   const { currentUser } = useAuth();
   const [currentView, setCurrentView] = useState<'calendar' | 'settings'>('calendar');
   const [completingSignup, setCompletingSignup] = useState(() => {
@@ -31,12 +32,19 @@ function AppContent() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
+  // If showing welcome, it takes precedence over the main app layout
+  if (showWelcome) {
+    return <WelcomePage onFinish={() => setShowWelcome(false)} />;
+  }
+
   if (!currentUser || completingSignup) {
-    return <AuthPage onComplete={() => {
-      // Clear sensitive URL parameters (oobCode, apiKey, etc.) from the address bar
-      window.history.replaceState(null, '', window.location.pathname);
-      setCompletingSignup(false);
-    }} />;
+    return <AuthPage
+      onComplete={() => {
+        window.history.replaceState(null, '', window.location.pathname);
+        setCompletingSignup(false);
+      }}
+      onSignupSuccess={() => setShowWelcome(true)} // Trigger Welcome Page
+    />;
   }
 
   return (

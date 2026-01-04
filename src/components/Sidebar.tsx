@@ -874,7 +874,7 @@ export function Sidebar({
 
                     {/* User Info & Logout - Bottom */}
                     {currentUser && (
-                        <div className={clsx(
+                        <div id="tour-user-footer" className={clsx(
                             "hidden md:flex items-center gap-2 px-3 py-2.5 border-t border-zinc-800 mt-auto transition-all duration-300",
                             isExpanded ? "justify-between" : "justify-center"
                         )}>
