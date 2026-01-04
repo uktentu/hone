@@ -369,6 +369,7 @@ export function Sidebar({
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 onKeyDown={(e) => {
+                                    if (e.key === ' ') e.stopPropagation();
                                     if (e.key === 'Escape') {
                                         cancelForm();
                                     }
@@ -445,6 +446,7 @@ export function Sidebar({
                                                         value={name}
                                                         onChange={(e) => setName(e.target.value)}
                                                         onKeyDown={(e) => {
+                                                            if (e.key === ' ') e.stopPropagation();
                                                             if (e.key === 'Escape') {
                                                                 cancelForm();
                                                             }
@@ -683,6 +685,7 @@ export function Sidebar({
                                                             onChange={e => setCalendarNameInput(e.target.value)}
                                                             className="flex-1 min-w-0 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-zinc-700"
                                                             onKeyDown={e => {
+                                                                if (e.key === ' ') e.stopPropagation();
                                                                 if (e.key === 'Escape') setEditingCalendarId(null);
                                                             }}
                                                         />
@@ -773,6 +776,7 @@ export function Sidebar({
                                         placeholder="Name..."
                                         className="flex-1 min-w-0 bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700"
                                         onKeyDown={e => {
+                                            if (e.key === ' ') e.stopPropagation();
                                             if (e.key === 'Escape') setIsAddingCalendar(false);
                                         }}
                                     />
