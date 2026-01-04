@@ -50,15 +50,19 @@ function GraphDayCell({
 
     const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
     const isLongPress = useRef(false);
+    const touchStartPos = useRef<{ x: number, y: number } | null>(null);
 
     const handleTouchStart = (e: React.TouchEvent) => {
         isLongPress.current = false;
+        touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
         const timer = setTimeout(() => {
             isLongPress.current = true;
             setHoveredTooltip({
                 content: tooltipText,
                 triggerRect: e.currentTarget.getBoundingClientRect()
             });
+            if (navigator.vibrate) navigator.vibrate(50);
         }, 500);
         setLongPressTimer(timer);
     };
@@ -68,15 +72,22 @@ function GraphDayCell({
             clearTimeout(longPressTimer);
             setLongPressTimer(null);
         }
+        touchStartPos.current = null;
         if (isLongPress.current) {
-            setTimeout(() => setHoveredTooltip(null), 1500);
+            setTimeout(() => setHoveredTooltip(null), 2000);
         }
     };
 
-    const handleTouchMove = () => {
-        if (longPressTimer) {
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!longPressTimer || !touchStartPos.current) return;
+
+        const deltaX = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
+        const deltaY = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
+
+        if (deltaX > 10 || deltaY > 10) {
             clearTimeout(longPressTimer);
             setLongPressTimer(null);
+            touchStartPos.current = null;
         }
     };
 
@@ -279,11 +290,26 @@ export function GraphView({ year, habits, selectedHabitIds, isHabitCompleted, lo
                     </div>
 
                     <div className="flex flex-col gap-1 min-w-0 flex-1">
-                        {/* Month Labels */}
-                        <div className="flex text-[10px] text-zinc-600 font-medium relative h-4">
-                            {Array.from({ length: 12 }).map((_, i) => (
-                                <span key={i} className="flex-1 text-left pl-1">{format(new Date(year, i, 1), 'MMM')}</span>
-                            ))}
+                        {/* Month Labels - Positioned by Week Index */}
+                        <div className="relative h-4 mb-2">
+                            {Array.from({ length: 12 }).map((_, i) => {
+                                const date = new Date(year, i, 1);
+                                const dayOfYear = differenceInDays(date, yearStart);
+                                const gridIndex = dayOfYear + startDay;
+                                const weekIndex = Math.floor(gridIndex / 7);
+
+                                return (
+                                    <span
+                                        key={i}
+                                        className="absolute text-[10px] text-zinc-600 font-medium"
+                                        style={{
+                                            left: `${(weekIndex * 16)}px`
+                                        }}
+                                    >
+                                        {format(date, 'MMM')}
+                                    </span>
+                                );
+                            })}
                         </div>
 
                         <div className="grid grid-rows-7 grid-flow-col gap-1 w-full">
