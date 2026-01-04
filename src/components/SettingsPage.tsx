@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, Link as LinkIcon, AlertCircle, CheckCircle, Shield, ArrowLeft, LogOut } from 'lucide-react';
+import { Mail, Lock, Link as LinkIcon, AlertCircle, CheckCircle, Shield, ArrowLeft, LogOut, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 
 interface SettingsPageProps {
@@ -14,6 +14,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     const [confirmUnlink, setConfirmUnlink] = useState<string | null>(null);
 
     // Password Update State
+    const [showUpdatePassword, setShowUpdatePassword] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -221,55 +222,83 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 {/* Security */}
                 <section className="space-y-4">
                     <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Security</h2>
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-6">
+                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
+
                         {isEmailLinked && (
-                            <form onSubmit={handleUpdatePassword} className="space-y-4">
-                                <h3 className="text-sm font-medium text-white flex items-center gap-2">
-                                    <Lock size={16} /> Update Password
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input
-                                        type="password"
-                                        placeholder="New Password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
-                                    />
-                                    <input
-                                        type="password"
-                                        placeholder="Confirm Password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
-                                    />
-                                </div>
+                            <div className="border-b border-zinc-800">
                                 <button
-                                    type="submit"
-                                    disabled={isLoading || !newPassword}
-                                    className="px-4 py-2 bg-white text-black text-sm font-bold rounded hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={() => setShowUpdatePassword(!showUpdatePassword)}
+                                    className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors"
                                 >
-                                    Update Password
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-zinc-800 rounded-lg text-zinc-400">
+                                            <Lock size={20} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-medium text-white">Password</p>
+                                            <p className="text-xs text-zinc-500">Change your account password</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className={clsx("w-5 h-5 text-zinc-600 transition-transform", showUpdatePassword && "rotate-90")} />
                                 </button>
-                            </form>
+
+                                {showUpdatePassword && (
+                                    <form onSubmit={handleUpdatePassword} className="p-4 pt-0 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                                        <div className="space-y-3 pt-4 border-t border-zinc-800/50">
+                                            <input
+                                                type="password"
+                                                placeholder="New Password"
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
+                                            />
+                                            <input
+                                                type="password"
+                                                placeholder="Confirm Password"
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
+                                            />
+                                            <div className="flex justify-end">
+                                                <button
+                                                    type="submit"
+                                                    disabled={isLoading || !newPassword}
+                                                    className="px-4 py-2 bg-white text-black text-sm font-bold rounded hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Update Password
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
                         )}
 
-                        <div className="border-t border-zinc-800 pt-6">
-                            <h3 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
-                                <Shield size={16} /> Account Actions
-                            </h3>
+                        {/* Reset Password Email Option */}
+                        <div className="border-b border-zinc-800">
                             <button
-                                type="button"
                                 onClick={handlePasswordReset}
                                 disabled={isLoading}
-                                className="block w-full text-left text-sm text-zinc-400 hover:text-white underline decoration-zinc-700 underline-offset-4 transition-colors p-0 mb-4"
+                                className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors group"
                             >
-                                Send Password Reset Email
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-zinc-800 rounded-lg text-zinc-400 group-hover:text-white transition-colors">
+                                        <Shield size={20} />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-medium text-white">Reset Password</p>
+                                        <p className="text-xs text-zinc-500">Send a password reset email</p>
+                                    </div>
+                                </div>
                             </button>
+                        </div>
 
+
+                        {/* Sign Out */}
+                        <div className="p-1">
                             <button
-                                type="button"
                                 onClick={logout}
-                                className="flex items-center gap-2 w-full px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/50 rounded font-medium text-sm transition-colors"
+                                className="w-full flex items-center justify-center gap-2 p-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-medium text-sm"
                             >
                                 <LogOut size={16} />
                                 Sign Out
