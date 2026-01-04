@@ -55,10 +55,13 @@ function AppContent() {
   );
 }
 
+import { Analytics } from "@vercel/analytics/react"
+
 function App() {
   return (
     <AuthProvider>
       <AppContent />
+      <Analytics />
     </AuthProvider>
   );
 }
