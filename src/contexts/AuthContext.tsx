@@ -129,7 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     async function sendOtp(email: string) {
-        const res = await fetch('/api/send-otp', {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const res = await fetch(`${baseUrl}/api/send-otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }),
@@ -141,7 +142,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     async function verifyOtp(email: string, otp: string, password?: string) {
-        const res = await fetch('/api/verify-otp', {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const res = await fetch(`${baseUrl}/api/verify-otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, otp, password }),
