@@ -109,7 +109,11 @@ export function AuthPage({ onComplete }: AuthPageProps) {
                 setSuccessMessage('Verification link sent! Check your email to complete signup.');
             }
         } catch (err: unknown) {
-            console.error('Auth Error:', err);
+            console.error('Login Link Error:', err);
+            // Log specifically if it's an object with a code or message
+            if (typeof err === 'object' && err !== null) {
+                console.error('Error Details:', JSON.stringify(err, null, 2));
+            }
             setError(getFirebaseErrorMessage(err));
         } finally {
             setLoading(false);
