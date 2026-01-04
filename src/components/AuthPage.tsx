@@ -59,6 +59,7 @@ export function AuthPage() {
                 await updateUserPassword(password);
                 // User is now fully signed up and logged in
             } catch (err) {
+                console.error('Auth Error:', err);
                 setError(getFirebaseErrorMessage(err));
             } finally {
                 setLoading(false);
@@ -85,6 +86,7 @@ export function AuthPage() {
                 setSuccessMessage('Verification link sent! Check your email to complete signup.');
             }
         } catch (err: unknown) {
+            console.error('Auth Error:', err);
             setError(getFirebaseErrorMessage(err));
         } finally {
             setLoading(false);
@@ -132,8 +134,12 @@ export function AuthPage() {
                             className="w-16 h-16 relative z-10 drop-shadow-2xl"
                         />
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-wide">HONE</h1>
-                    <p className="text-xs text-zinc-500 mt-1 tracking-wider uppercase">Sharpen your habits</p>
+                    <h1 className="text-2xl font-bold text-white tracking-wide">
+                        {completingSignup ? 'WELCOME BACK' : 'HONE'}
+                    </h1>
+                    <p className="text-xs text-zinc-500 mt-1 tracking-wider uppercase">
+                        {completingSignup ? 'Complete your account setup' : 'Sharpen your habits'}
+                    </p>
                 </div>
 
                 {/* Auth Form */}

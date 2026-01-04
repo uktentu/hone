@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     async function updateUserPassword(password: string) {
-        if (!currentUser) return;
+        if (!currentUser) throw new Error('No authenticated user found');
         await updatePassword(currentUser, password);
     }
 
