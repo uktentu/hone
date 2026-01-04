@@ -12,6 +12,7 @@ import {
     unlink,
     sendPasswordResetEmail,
     updatePassword,
+    sendEmailVerification,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -26,6 +27,7 @@ interface AuthContextType {
     unlinkProvider: (providerId: string) => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
     updateUserPassword: (password: string) => Promise<void>;
+    verifyEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,6 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updatePassword(currentUser, password);
     }
 
+    async function verifyEmail() {
+        if (!currentUser) return;
+        await sendEmailVerification(currentUser);
+    }
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
@@ -99,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unlinkProvider,
         resetPassword,
         updateUserPassword,
+        verifyEmail,
     };
 
     return (

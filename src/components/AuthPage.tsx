@@ -13,7 +13,7 @@ export function AuthPage() {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [loading, setLoading] = useState(false);
-    const { signup, login, googleLogin, resetPassword } = useAuth();
+    const { signup, login, googleLogin, resetPassword, verifyEmail } = useAuth();
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -38,6 +38,8 @@ export function AuthPage() {
                 await login(email, password);
             } else {
                 await signup(email, password);
+                await verifyEmail();
+                setSuccessMessage('Account created! Verification email sent.');
             }
         } catch (err: unknown) {
             setError(getFirebaseErrorMessage(err));
