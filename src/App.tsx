@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { Layout } from './components/Layout';
 import { Sidebar } from './components/Sidebar';
 import { Calendar } from './components/Calendar';
+import { SettingsPage } from './components/SettingsPage';
 import { SplashScreen } from './components/SplashScreen';
 import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -13,6 +14,8 @@ import { OnboardingTour } from './components/OnboardingTour';
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const { currentUser } = useAuth();
+  const [currentView, setCurrentView] = useState<'calendar' | 'settings'>('calendar');
+
   const {
     habitData,
     calendarData,
@@ -46,16 +49,22 @@ function AppContent() {
         onReorderHabits={actions.reorderHabits}
         onSelectHabit={selection.toggleHabitSelection}
         selectedHabitIds={selection.selectedHabitIds}
+        currentView={currentView}
+        onNavigate={setCurrentView}
       />
-      <Calendar
-        habits={habitData.habits}
-        selectedHabitIds={selection.selectedHabitIds}
-        selectedHabitStats={selection.selectedHabitStats}
-        onToggleHabit={actions.toggleHabitForDate}
-        onToggleHabits={actions.toggleHabitsForDate}
-        isHabitCompleted={actions.isHabitCompleted}
-        logs={habitData.logs}
-      />
+      {currentView === 'settings' ? (
+        <SettingsPage onBack={() => setCurrentView('calendar')} />
+      ) : (
+        <Calendar
+          habits={habitData.habits}
+          selectedHabitIds={selection.selectedHabitIds}
+          selectedHabitStats={selection.selectedHabitStats}
+          onToggleHabit={actions.toggleHabitForDate}
+          onToggleHabits={actions.toggleHabitsForDate}
+          isHabitCompleted={actions.isHabitCompleted}
+          logs={habitData.logs}
+        />
+      )}
     </Layout>
   );
 }

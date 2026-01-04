@@ -25,6 +25,8 @@ interface SidebarProps {
     selectedHabitIds: string[]; // Updated prop
     isCollapsed?: boolean;
     onToggleCollapse?: () => void;
+    currentView?: 'calendar' | 'settings';
+    onNavigate?: (view: 'calendar' | 'settings') => void;
 }
 
 // Sortable Item Component
@@ -117,7 +119,9 @@ export function Sidebar({
     onDeleteHabit,
     onReorderHabits,
     onSelectHabit,
-    selectedHabitIds
+    selectedHabitIds,
+    currentView,
+    onNavigate
 }: SidebarProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -662,7 +666,7 @@ export function Sidebar({
                             <span className="text-sm font-bold text-white tracking-wide truncate">Hone</span>
                         </div>
 
-                        {/* Mobile-only logout button */}
+                        {/* Mobile-only menu items */}
                         {currentUser && (
                             <div className="md:hidden flex items-center gap-1">
                                 <button
@@ -672,6 +676,17 @@ export function Sidebar({
                                     title="Reset Tour"
                                 >
                                     <Sparkles className="w-4 h-4 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
+                                </button>
+                                <button
+                                    id="tour-mobile-settings"
+                                    onClick={() => onNavigate?.('settings')}
+                                    className={clsx(
+                                        "p-2 hover:bg-zinc-800 rounded transition-colors group",
+                                        currentView === 'settings' ? "text-white bg-zinc-800" : "text-zinc-500"
+                                    )}
+                                    title="Settings"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 group-hover:text-white transition-colors"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </button>
                                 <button
                                     onClick={handleLogout}
@@ -869,13 +884,25 @@ export function Sidebar({
                             </div>
                             <div className="flex items-center gap-1">
                                 {isExpanded && (
-                                    <button
-                                        onClick={resetTour}
-                                        className="p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0"
-                                        title="Reset Tour"
-                                    >
-                                        <Sparkles className="w-4 h-4 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={resetTour}
+                                            className="p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0"
+                                            title="Reset Tour"
+                                        >
+                                            <Sparkles className="w-4 h-4 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
+                                        </button>
+                                        <button
+                                            onClick={() => onNavigate?.('settings')}
+                                            className={clsx(
+                                                "p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0",
+                                                currentView === 'settings' ? "text-white bg-zinc-800" : "text-zinc-500"
+                                            )}
+                                            title="Settings"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 group-hover:text-white transition-colors"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                    </>
                                 )}
                                 <button
                                     onClick={handleLogout}

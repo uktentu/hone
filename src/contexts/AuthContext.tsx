@@ -6,6 +6,12 @@ import {
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup,
+    linkWithPopup,
+    unlink,
+    sendPasswordResetEmail,
+    updatePassword,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -15,6 +21,11 @@ interface AuthContextType {
     signup: (email: string, password: string) => Promise<void>;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    googleLogin: () => Promise<void>;
+    linkGoogle: () => Promise<void>;
+    unlinkProvider: (providerId: string) => Promise<void>;
+    resetPassword: (email: string) => Promise<void>;
+    updateUserPassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +54,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signOut(auth);
     }
 
+    async function googleLogin() {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+    }
+
+    async function linkGoogle() {
+        if (!currentUser) return;
+        const provider = new GoogleAuthProvider();
+        await linkWithPopup(currentUser, provider);
+    }
+
+    async function unlinkProvider(providerId: string) {
+        if (!currentUser) return;
+        await unlink(currentUser, providerId);
+    }
+
+    async function resetPassword(email: string) {
+        await sendPasswordResetEmail(auth, email);
+    }
+
+    async function updateUserPassword(password: string) {
+        if (!currentUser) return;
+        await updatePassword(currentUser, password);
+    }
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
@@ -58,6 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         login,
         logout,
+        googleLogin,
+        linkGoogle,
+        unlinkProvider,
+        resetPassword,
+        updateUserPassword,
     };
 
     return (
