@@ -22,32 +22,47 @@ export function AuthPage({ onComplete }: AuthPageProps) {
 
     const [linkSent, setLinkSent] = useState(false);
     const [completingSignup, setCompletingSignup] = useState(false);
+    const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+    const [confirmationEmail, setConfirmationEmail] = useState('');
 
     useEffect(() => {
         const auth = getAuth();
         if (isSignInWithEmailLink(auth, window.location.href)) {
-            let email = window.localStorage.getItem('emailForSignIn');
-            if (!email) {
-                email = window.prompt('Please provide your email for confirmation');
-            }
-            if (email) {
-                setLoading(true);
-                completeLoginWithLink(email, window.location.href)
-                    .then(() => {
-                        setCompletingSignup(true);
-                        setEmail(email!); // Update state so it shows in the UI
-                        setSuccessMessage('Email verified! Please set a password to complete your account.');
-                    })
-                    .catch((err) => {
-                        setError(getFirebaseErrorMessage(err));
-                    })
-                    .finally(() => {
-                        setLoading(false);
-                    });
+            const storedEmail = window.localStorage.getItem('emailForSignIn');
+            if (storedEmail) {
+                handleFinishSignIn(storedEmail);
+            } else {
+                // Email missing (opened on different device/browser) - ask user
+                setShowEmailConfirmation(true);
             }
         }
-    }, [completeLoginWithLink]);
+    }, []);
 
+    async function handleFinishSignIn(emailToConfirm: string) {
+        setLoading(true);
+        try {
+            await completeLoginWithLink(emailToConfirm, window.location.href);
+            setCompletingSignup(true);
+            setEmail(emailToConfirm);
+            setSuccessMessage('Email verified! Please set a password to complete your account.');
+            setShowEmailConfirmation(false);
+        } catch (err) {
+            setError(getFirebaseErrorMessage(err));
+            // Don't turn off confirmation if it was a wrong email error, user might need to retry
+            // if (getFirebaseErrorMessage(err) !== 'Invalid email address') { ... }
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handleConfirmationSubmit(e: FormEvent) {
+        e.preventDefault();
+        if (!confirmationEmail) {
+            setError('Please enter your email to confirm');
+            return;
+        }
+        await handleFinishSignIn(confirmationEmail);
+    }
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -143,16 +158,58 @@ export function AuthPage({ onComplete }: AuthPageProps) {
                         />
                     </div>
                     <h1 className="text-2xl font-bold text-white tracking-wide">
-                        {completingSignup ? 'WELCOME BACK' : 'HONE'}
+                        {completingSignup ? 'WELCOME BACK' : (showEmailConfirmation ? 'VERIFY EMAIL' : 'HONE')}
                     </h1>
                     <p className="text-xs text-zinc-500 mt-1 tracking-wider uppercase">
-                        {completingSignup ? 'Complete your account setup' : 'Sharpen your habits'}
+                        {completingSignup ? 'Complete your account setup' : (showEmailConfirmation ? 'Confirm your email to continue' : 'Sharpen your habits')}
                     </p>
                 </div>
 
                 {/* Auth Form */}
                 <div className="surface p-6 rounded-lg animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-                    {linkSent ? (
+                    {showEmailConfirmation ? (
+                        <form onSubmit={handleConfirmationSubmit} className="space-y-4">
+                            <div className="text-center mb-6">
+                                <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-3 border border-zinc-800">
+                                    <Mail className="w-6 h-6 text-zinc-400" />
+                                </div>
+                                <h3 className="text-white font-medium">Confirm Email Address</h3>
+                                <p className="text-zinc-500 text-xs mt-1">
+                                    For security, please confirm the email address you are signing in with.
+                                </p>
+                            </div>
+
+                            {error && (
+                                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded text-red-400 text-sm">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    <p>{error}</p>
+                                </div>
+                            )}
+
+                            <div>
+                                <label htmlFor="confirmationEmail" className="block text-sm font-medium text-zinc-400 mb-2">
+                                    Email
+                                </label>
+                                <input
+                                    id="confirmationEmail"
+                                    type="email"
+                                    value={confirmationEmail}
+                                    onChange={(e) => setConfirmationEmail(e.target.value)}
+                                    className="w-full px-4 py-2 bg-zinc-900 border border-zinc-800 rounded text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
+                                    placeholder="you@example.com"
+                                    autoFocus
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-2 bg-white text-zinc-950 font-bold rounded uppercase tracking-wide text-sm hover:bg-zinc-200 transition-all disabled:opacity-50"
+                            >
+                                {loading ? 'Verifying...' : 'Verify & Continue'}
+                            </button>
+                        </form>
+                    ) : linkSent ? (
                         <div className="text-center space-y-4 py-8">
                             <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <CheckCircle className="w-8 h-8 text-emerald-500" />

@@ -702,7 +702,7 @@ export function Sidebar({
 
 
 
-                    <div className={clsx(
+                    <div id="tour-calendar-list" className={clsx(
                         "custom-scrollbar space-y-1 transition-all duration-300",
                         // Mobile: Always visible, simple list
                         "p-2 overflow-y-auto flex-1",
@@ -857,6 +857,7 @@ export function Sidebar({
 
                         {!isAddingCalendar && !editingCalendarId && (
                             <button
+                                id="tour-calendar-add"
                                 onClick={startAddingCalendar}
                                 className={clsx(
                                     "w-full flex items-center gap-3 p-2 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900/50 transition-all",
@@ -894,6 +895,7 @@ export function Sidebar({
                                             <Sparkles className="w-4 h-4 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
                                         </button>
                                         <button
+                                            id="tour-desktop-settings"
                                             onClick={() => onNavigate?.('settings')}
                                             className={clsx(
                                                 "p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0",

@@ -33,7 +33,7 @@ export function OnboardingTour() {
                 <div className="text-left">
                     <h3 className="text-lg font-bold mb-2">Welcome to Hone! 👋</h3>
                     <p className="text-sm">
-                        Your new minimal habit tracker. Let's explore how to get the most out of it.
+                        Your new minimal habit tracker. Let's explore how it works.
                     </p>
                 </div>
             ),
@@ -43,48 +43,61 @@ export function OnboardingTour() {
         ...(isMobile ? [
             {
                 target: '#tour-mobile-sidebar-toggle',
-                content: 'Access your menu here to switch calendars or manage account settings.',
+                content: 'Tap here to switch calendars or access settings.',
             },
             {
                 target: '#tour-mobile-habits-trigger',
-                content: 'Tap button to open your habits menu. You can add, edit, and reorder habits from there.',
+                content: 'Open your habits menu here to add or edit habits.',
+            },
+            {
+                target: '#tour-mobile-multiselect',
+                content: 'Use this to check off multiple habits at once.',
             },
             {
                 target: '#tour-mobile-reset',
-                content: 'Demo Tool: Tap this sparkle icon to reset the onboarding tour anytime.',
+                content: 'Reset this tour anytime from the menu.',
             }
         ] : [
             {
+                target: '#tour-calendar-list',
+                content: 'Switch between your different calendars here.',
+            },
+            {
+                target: '#tour-calendar-add',
+                content: 'Create new calendars to organize different life areas.',
+            },
+            {
                 target: '#tour-sidebar-add',
-                content: 'Start by creating a habit. Choose an icon and color to customize it.',
+                content: 'Create a new habit. Pick an icon and color.',
             },
             {
                 target: '#tour-habit-list',
-                content: 'Your habits live here. Drag to reorder them, or click the edit icon to make changes.',
+                content: 'Your habits live here. Drag to reorder, click to edit.',
             }
         ]),
         {
             target: '#tour-calendar-main',
-            content: 'This is your tracking canvas. Tap a day to complete a habit (or multiple in multi-select mode).',
+            content: 'Your tracking canvas. Click a day to toggle habits.',
         },
         {
             target: '#tour-calendar-nav',
-            content: 'Travel through time. Navigate between years easily.',
+            content: 'Navigate through time. Jump to today or switch years.',
         },
         {
             target: '#tour-view-toggles',
-            content: 'Switch perspectives. Use "Graph" for GitHub-style visualizations or "Year" for the classic view.',
+            content: 'Switch views: "Graph" for heatmaps, "Year" for daily tracking.',
         },
         {
             target: '#tour-calendar-stats',
-            content: 'Track your consistency. See your streaks, weekly progress, and completion rates at a glance.',
+            content: 'Track your streaks, weekly progress, and completion rates.',
             placement: 'bottom'
         },
-        {
-            target: '#tour-mobile-multiselect',
-            content: 'Power user tip: Toggle multi-select to update or compare multiple habits at once.',
-            placement: 'bottom',
-        }
+        ...(!isMobile ? [
+            {
+                target: '#tour-desktop-settings',
+                content: 'Manage your account, password, and preferences here.',
+            }
+        ] : [])
     ];
 
     return (
