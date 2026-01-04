@@ -36,8 +36,8 @@ const transporter = nodemailer.createTransport({
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS headers for local dev if needed (Vercel dev handles this usually, but good to be safe)
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // res.setHeader('Access-Control-Allow-Origin', '*');
 
     if (req.method === 'OPTIONS') {
         res.status(200).end();
