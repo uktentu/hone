@@ -42,8 +42,16 @@ export function OnboardingTour() {
         },
         ...(isMobile ? [
             {
+                target: '#tour-mobile-sidebar-toggle',
+                content: 'Access your menu here to switch calendars or manage account settings.',
+            },
+            {
                 target: '#tour-mobile-habits-trigger',
                 content: 'Tap button to open your habits menu. You can add, edit, and reorder habits from there.',
+            },
+            {
+                target: '#tour-mobile-reset',
+                content: 'Demo Tool: Tap this sparkle icon to reset the onboarding tour anytime.',
             }
         ] : [
             {

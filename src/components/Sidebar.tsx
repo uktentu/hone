@@ -642,6 +642,7 @@ export function Sidebar({
                 )}>
                     <div className="p-3 flex items-center gap-3 border-b border-zinc-900 h-[53px]">
                         <button
+                            id="tour-mobile-sidebar-toggle"
                             onClick={() => setIsExpanded(!isExpanded)}
                             className="p-1.5 hover:bg-zinc-900 rounded-md text-zinc-400 transition-colors shrink-0"
                         >
@@ -665,6 +666,7 @@ export function Sidebar({
                         {currentUser && (
                             <div className="md:hidden flex items-center gap-1">
                                 <button
+                                    id="tour-mobile-reset"
                                     onClick={resetTour}
                                     className="p-2 hover:bg-zinc-800 rounded transition-colors group"
                                     title="Reset Tour"
