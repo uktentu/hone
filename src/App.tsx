@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Layout } from './components/Layout';
 import { Sidebar } from './components/Sidebar';
 import { Calendar } from './components/Calendar';
@@ -5,7 +7,6 @@ import { SplashScreen } from './components/SplashScreen';
 import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useHabits } from './hooks/useHabits';
-import { useState } from 'react';
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
@@ -54,8 +55,6 @@ function AppContent() {
     </Layout>
   );
 }
-
-import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   return (
