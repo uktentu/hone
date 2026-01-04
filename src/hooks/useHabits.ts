@@ -265,6 +265,32 @@ export function useHabits() {
         }, { merge: true });
     };
 
+    const toggleHabitsForDate = async (date: Date, habitIds: string[]) => {
+        if (!currentUser || habitIds.length === 0) return;
+        const dateKey = format(date, 'yyyy-MM-dd');
+        const currentHabits = logs[dateKey] || [];
+
+        // Check if ANY of the target habits are NOT completed
+        const anyIncomplete = habitIds.some(id => !currentHabits.includes(id));
+
+        let updatedHabits: string[];
+        if (anyIncomplete) {
+            // Mark ALL as completed (merge unique)
+            const newIds = habitIds.filter(id => !currentHabits.includes(id));
+            updatedHabits = [...currentHabits, ...newIds];
+        } else {
+            // Mark ALL as incomplete (remove target habits)
+            updatedHabits = currentHabits.filter(id => !habitIds.includes(id));
+        }
+
+        const logRef = doc(db, 'logs', `${currentUser.uid}_${dateKey}`);
+        await setDoc(logRef, {
+            date: dateKey,
+            habitIds: updatedHabits,
+            userId: currentUser.uid
+        }, { merge: true });
+    };
+
     const isHabitCompleted = (date: Date, habitId: string) => {
         const dateKey = format(date, 'yyyy-MM-dd');
         return logs[dateKey]?.includes(habitId) || false;
@@ -455,6 +481,7 @@ export function useHabits() {
             reorderHabits,
             deleteHabit,
             toggleHabitForDate,
+            toggleHabitsForDate,
             isHabitCompleted
         }
     };

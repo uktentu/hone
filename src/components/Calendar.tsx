@@ -17,20 +17,21 @@ interface CalendarProps {
     selectedHabitIds: string[];
     selectedHabitStats: HabitStats | null;
     onToggleHabit: (date: Date, habitId: string) => void;
+    onToggleHabits: (date: Date, habitIds: string[]) => void;
     isHabitCompleted: (date: Date, habitId: string) => boolean;
     logs: HabitLog;
 }
 
 type ViewMode = 'year' | 'graph';
 
-export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggleHabit, isHabitCompleted, logs }: CalendarProps) {
+export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggleHabit, onToggleHabits, isHabitCompleted, logs }: CalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('year');
 
     const selectedHabits = habits.filter(h => selectedHabitIds.includes(h.id));
     const isMultiSelect = selectedHabits.length > 1;
 
-    // ... (imports and other lines remain handled by replace logic, I need to check line numbers carefully)
+    // ... (imports and other lines remain)
 
     const next = () => {
         setCurrentDate(addYears(currentDate, 1));
@@ -46,19 +47,29 @@ export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggl
         return format(currentDate, 'yyyy');
     };
 
-    const [confirmingAction, setConfirmingAction] = useState<{ date: Date, habitId: string } | null>(null);
+    const [confirmingAction, setConfirmingAction] = useState<{ date: Date, habitId?: string, habitIds?: string[] } | null>(null);
 
     const handleToggleHabit = (date: Date, habitId: string) => {
-        if (isToday(date)) {
-            onToggleHabit(date, habitId);
+        if (isMultiSelect) {
+            // Batch toggle: Always confirm
+            setConfirmingAction({ date, habitIds: selectedHabitIds });
         } else {
-            setConfirmingAction({ date, habitId });
+            // Single toggle: Confirm only if not today
+            if (isToday(date)) {
+                onToggleHabit(date, habitId);
+            } else {
+                setConfirmingAction({ date, habitId });
+            }
         }
     };
 
     const confirmToggle = () => {
         if (confirmingAction) {
-            onToggleHabit(confirmingAction.date, confirmingAction.habitId);
+            if (confirmingAction.habitIds) {
+                onToggleHabits(confirmingAction.date, confirmingAction.habitIds);
+            } else if (confirmingAction.habitId) {
+                onToggleHabit(confirmingAction.date, confirmingAction.habitId);
+            }
             setConfirmingAction(null);
         }
     };
@@ -67,6 +78,7 @@ export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggl
         <main className="flex-1 h-full overflow-hidden flex flex-col relative bg-zinc-950" aria-label="Calendar view">
             {/* Header */}
             <header className="flex flex-col gap-3 px-4 py-3 shrink-0 border-b border-zinc-900 bg-zinc-950">
+                {/* ... (Header content unchanged) ... */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
@@ -200,7 +212,15 @@ export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggl
                     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 shadow-2xl max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
                         <h3 className="text-white font-bold text-lg mb-2">Confirm Change</h3>
                         <p className="text-zinc-400 text-sm mb-5">
-                            Are you sure you want to update the habit status for <span className="text-white font-medium">{format(confirmingAction.date, 'MMMM do, yyyy')}</span>?
+                            {confirmingAction.habitIds ? (
+                                <>
+                                    Are you sure you want to update <span className="text-white font-medium">{confirmingAction.habitIds.length}</span> habits for <span className="text-white font-medium">{format(confirmingAction.date, 'MMMM do, yyyy')}</span>?
+                                </>
+                            ) : (
+                                <>
+                                    Are you sure you want to update the habit status for <span className="text-white font-medium">{format(confirmingAction.date, 'MMMM do, yyyy')}</span>?
+                                </>
+                            )}
                         </p>
                         <div className="flex justify-end gap-3">
                             <button

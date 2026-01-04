@@ -49,6 +49,7 @@ function AppContent() {
         selectedHabitIds={selection.selectedHabitIds}
         selectedHabitStats={selection.selectedHabitStats}
         onToggleHabit={actions.toggleHabitForDate}
+        onToggleHabits={actions.toggleHabitsForDate}
         isHabitCompleted={actions.isHabitCompleted}
         logs={habitData.logs}
       />
