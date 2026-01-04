@@ -8,13 +8,14 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
-    const { currentUser, linkGoogle, unlinkProvider, resetPassword, updateUserPassword, logout } = useAuth();
+    const { currentUser, linkGoogle, unlinkProvider, resetPassword, updateUserPassword, logout, reauthenticateUser } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [confirmUnlink, setConfirmUnlink] = useState<string | null>(null);
 
     // Password Update State
     const [showUpdatePassword, setShowUpdatePassword] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -22,6 +23,8 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     const isGoogleLinked = providers.some(p => p.providerId === 'google.com');
     const isEmailLinked = providers.some(p => p.providerId === 'password');
     const canUnlink = providers.length > 1;
+
+    // ... (Link/Unlink handlers remain same)
 
     const handleLinkGoogle = async () => {
         setIsLoading(true);
@@ -69,24 +72,41 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
+        setMessage(null);
+
+        if (!currentPassword) {
+            setMessage({ type: 'error', text: 'Please enter your current password.' });
+            return;
+        }
+
         if (newPassword !== confirmPassword) {
-            setMessage({ type: 'error', text: 'Passwords do not match.' });
+            setMessage({ type: 'error', text: 'New passwords do not match.' });
             return;
         }
         if (newPassword.length < 6) {
-            setMessage({ type: 'error', text: 'Password must be at least 6 characters.' });
+            setMessage({ type: 'error', text: 'New password must be at least 6 characters.' });
             return;
         }
 
         setIsLoading(true);
-        setMessage(null);
         try {
+            // Verify current password first
+            await reauthenticateUser(currentPassword);
+
+            // If verification successful, update to new password
             await updateUserPassword(newPassword);
             setMessage({ type: 'success', text: 'Password updated successfully!' });
+            setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
-        } catch {
-            setMessage({ type: 'error', text: 'Failed to update password. You may need to re-login first.' });
+            setShowUpdatePassword(false);
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error('Update password error:', err);
+            const msg = err.message.includes('auth/invalid-credential')
+                ? 'Incorrect current password.'
+                : 'Failed to update password. ' + err.message;
+            setMessage({ type: 'error', text: msg });
         } finally {
             setIsLoading(false);
         }
@@ -247,22 +267,31 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                                         <div className="space-y-3 pt-4 border-t border-zinc-800/50">
                                             <input
                                                 type="password"
-                                                placeholder="New Password"
-                                                value={newPassword}
-                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="Current Password"
+                                                value={currentPassword}
+                                                onChange={(e) => setCurrentPassword(e.target.value)}
                                                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
                                             />
-                                            <input
-                                                type="password"
-                                                placeholder="Confirm Password"
-                                                value={confirmPassword}
-                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
-                                            />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <input
+                                                    type="password"
+                                                    placeholder="New Password"
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
+                                                />
+                                                <input
+                                                    type="password"
+                                                    placeholder="Confirm Password"
+                                                    value={confirmPassword}
+                                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:ring-1 focus:ring-white outline-none transition-all"
+                                                />
+                                            </div>
                                             <div className="flex justify-end">
                                                 <button
                                                     type="submit"
-                                                    disabled={isLoading || !newPassword}
+                                                    disabled={isLoading || !newPassword || !currentPassword}
                                                     className="px-4 py-2 bg-white text-black text-sm font-bold rounded hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     Update Password

@@ -16,6 +16,8 @@ import {
     sendSignInLinkToEmail,
     isSignInWithEmailLink,
     signInWithEmailLink,
+    reauthenticateWithCredential,
+    EmailAuthProvider,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -33,6 +35,7 @@ interface AuthContextType {
     verifyEmail: () => Promise<void>;
     sendLoginLink: (email: string) => Promise<void>;
     completeLoginWithLink: (email: string, href: string) => Promise<void>;
+    reauthenticateUser: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -108,6 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
 
+    async function reauthenticateUser(password: string) {
+        if (!currentUser || !currentUser.email) throw new Error('No user to reauthenticate');
+        const credential = EmailAuthProvider.credential(currentUser.email, password);
+        await reauthenticateWithCredential(currentUser, credential);
+    }
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
@@ -131,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyEmail,
         sendLoginLink,
         completeLoginWithLink,
+        reauthenticateUser,
     };
 
     return (
