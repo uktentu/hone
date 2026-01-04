@@ -498,9 +498,11 @@ export function Sidebar({
                                     <SortableHabitItem key={habit.id} habit={habit} isSelected={isSelected}>
                                         <div
                                             onClick={(e) => {
-                                                const multiSelect = e.ctrlKey || e.metaKey;
-                                                onSelectHabit(habit.id, multiSelect);
-                                                if (window.matchMedia('(max-width: 768px)').matches && !multiSelect) {
+                                                const isMobile = window.matchMedia('(max-width: 768px)').matches;
+                                                const toggleState = e.ctrlKey || e.metaKey || isMultiSelectMode;
+                                                onSelectHabit(habit.id, toggleState);
+
+                                                if (isMobile && !isMultiSelectMode && !toggleState) {
                                                     setIsExpanded(false);
                                                     setShowMobileHabits(false);
                                                 }

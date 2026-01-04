@@ -1,5 +1,5 @@
 import { eachDayOfInterval, endOfYear, format, getDay, startOfYear, differenceInDays } from 'date-fns';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import clsx from 'clsx';
 import type { Habit, HabitLog } from '../types';
 import { Tooltip } from './Tooltip';
@@ -209,25 +209,61 @@ export function GraphView({ year, habits, selectedHabitIds, isHabitCompleted, lo
 
                                 const tooltipText = `${format(day, 'EEEE, MMM d, yyyy')}\n${habitsCompletedToday}/${selectedHabitIds.length} completed${completedNames ? ':\n• ' + completedNames : ''}`;
 
+                                const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+                                const isLongPress = useRef(false);
+
+                                const handleTouchStart = (e: React.TouchEvent) => {
+                                    isLongPress.current = false;
+                                    const timer = setTimeout(() => {
+                                        isLongPress.current = true;
+                                        setHoveredTooltip({
+                                            content: tooltipText,
+                                            triggerRect: e.currentTarget.getBoundingClientRect()
+                                        });
+                                    }, 500);
+                                    setLongPressTimer(timer);
+                                };
+
+                                const handleTouchEnd = () => {
+                                    if (longPressTimer) {
+                                        clearTimeout(longPressTimer);
+                                        setLongPressTimer(null);
+                                    }
+                                    if (isLongPress.current) {
+                                        setTimeout(() => setHoveredTooltip(null), 1500);
+                                    }
+                                };
+
                                 return (
                                     <div
                                         key={day.toISOString()}
                                         onMouseEnter={(e) => {
-                                            setHoveredTooltip({
-                                                content: tooltipText,
-                                                triggerRect: e.currentTarget.getBoundingClientRect()
-                                            });
+                                            if (window.matchMedia('(hover: hover)').matches) {
+                                                setHoveredTooltip({
+                                                    content: tooltipText,
+                                                    triggerRect: e.currentTarget.getBoundingClientRect()
+                                                });
+                                            }
                                         }}
                                         onMouseLeave={() => setHoveredTooltip(null)}
+                                        onTouchStart={handleTouchStart}
+                                        onTouchEnd={handleTouchEnd}
+                                        onClick={(e) => {
+                                            if (isLongPress.current) {
+                                                e.preventDefault();
+                                                return;
+                                            }
+                                        }}
                                         className={clsx(
-                                            "w-3 h-3 rounded-sm transition-all duration-200 cursor-pointer hover:scale-125 hover:z-10 relative",
+                                            "w-3 h-3 rounded-sm transition-all duration-200 hover:scale-125 hover:z-10 relative select-none touch-manipulation",
                                             !isCompleted && "bg-zinc-900/50 border border-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800",
                                             isCompleted && "shadow-[0_0_8px_-2px_var(--color)]"
                                         )}
                                         style={{
                                             backgroundColor: isCompleted ? displayColor : undefined,
                                             '--color': isCompleted ? displayColor : undefined,
-                                            opacity: opacity
+                                            opacity: opacity,
+                                            WebkitTapHighlightColor: 'transparent'
                                         } as React.CSSProperties}
                                     />
                                 );

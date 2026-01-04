@@ -1,6 +1,6 @@
 import { startOfYear, eachMonthOfInterval, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameMonth, isToday } from 'date-fns';
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Habit } from '../types';
 import { Tooltip } from './Tooltip';
 
@@ -119,24 +119,67 @@ export function YearView({ year, habits, selectedHabitIds, onToggleHabit, isHabi
                                         ? `${format(day, 'MMM d, yyyy')}\n• ${completedNames}`
                                         : format(day, 'MMM d, yyyy');
 
+                                    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+                                    const isLongPress = useRef(false);
+
+                                    const handleTouchStart = (e: React.TouchEvent) => {
+                                        isLongPress.current = false;
+                                        const timer = setTimeout(() => {
+                                            isLongPress.current = true;
+                                            setHoveredTooltip({
+                                                content: title,
+                                                triggerRect: e.currentTarget.getBoundingClientRect()
+                                            });
+                                        }, 500); // 500ms long press
+                                        setLongPressTimer(timer);
+                                    };
+
+                                    const handleTouchEnd = () => {
+                                        if (longPressTimer) {
+                                            clearTimeout(longPressTimer);
+                                            setLongPressTimer(null);
+                                        }
+                                        // Delay hiding tooltip slightly so user can read it
+                                        if (isLongPress.current) {
+                                            setTimeout(() => setHoveredTooltip(null), 1500);
+                                        }
+                                    };
+
                                     return (
                                         <button
                                             key={day.toISOString()}
+                                            // Mouse interactions
                                             onMouseEnter={(e) => {
-                                                setHoveredTooltip({
-                                                    content: title,
-                                                    triggerRect: e.currentTarget.getBoundingClientRect()
-                                                });
+                                                if (window.matchMedia('(hover: hover)').matches) {
+                                                    setHoveredTooltip({
+                                                        content: title,
+                                                        triggerRect: e.currentTarget.getBoundingClientRect()
+                                                    });
+                                                }
                                             }}
                                             onMouseLeave={() => setHoveredTooltip(null)}
-                                            // Toggle the first selected habit by default if multiple are selected
-                                            // Or toggle specific one if only one selected
-                                            onClick={() => onToggleHabit(day, selectedHabitIds[0])}
-                                            className="group relative w-full aspect-square flex items-center justify-center rounded-sm hover:bg-zinc-800/30 transition-colors"
+
+                                            // Touch interactions
+                                            onTouchStart={handleTouchStart}
+                                            onTouchEnd={handleTouchEnd}
+
+                                            // Click/Tap Logic
+                                            onClick={(e) => {
+                                                // Prevent toggle if it was a long press
+                                                if (isLongPress.current) {
+                                                    e.preventDefault();
+                                                    return;
+                                                }
+                                                onToggleHabit(day, selectedHabitIds[0]);
+                                            }}
+                                            className="group relative w-full aspect-square flex items-center justify-center rounded-sm hover:bg-zinc-800/30 transition-colors select-none touch-manipulation" // Added select-none and touch-manipulation
+                                            style={{
+                                                WebkitTapHighlightColor: 'transparent'
+                                            }}
                                         >
                                             <span
                                                 className={clsx(
-                                                    "w-full h-full flex items-center justify-center text-[9px] rounded-lg transition-all duration-200", // Rounded Rectangloid
+                                                    "w-full h-full flex items-center justify-center text-[9px] rounded-lg transition-all duration-200 pointer-events-none", // pointer-events-none to let button handle events
                                                     isCompleted && "font-bold shadow-sm",
                                                     !isCompleted && "text-zinc-500 hover:text-white",
                                                     isCurrentDay && !isCompleted && "text-white font-bold bg-zinc-800"
