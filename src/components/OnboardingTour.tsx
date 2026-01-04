@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
-import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride';
+import Joyride, { STATUS, EVENTS, type CallBackProps, type Step } from 'react-joyride';
 import { useAuth } from '../contexts/AuthContext';
 
-export function OnboardingTour() {
+interface OnboardingTourProps {
+    setShowMobileHabits?: (show: boolean) => void;
+}
+
+export function OnboardingTour({ setShowMobileHabits }: OnboardingTourProps) {
     const [run, setRun] = useState(false);
     const { currentUser } = useAuth();
 
@@ -15,12 +19,24 @@ export function OnboardingTour() {
     }, [currentUser]);
 
     const handleJoyrideCallback = (data: CallBackProps) => {
-        const { status } = data;
+        const { status, type, index } = data;
         const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
         if (finishedStatuses.includes(status)) {
             setRun(false);
             localStorage.setItem('hone_has_seen_onboarding', 'true');
+        }
+
+        // Mobile Tour Logic: Open Habits Menu on Step 2 (Index 2) -> 3
+        const isMobile = window.innerWidth < 768;
+        if (isMobile && setShowMobileHabits) {
+            // If we are moving FROM step 2 (Habits Trigger) TO step 3 (Multi-select), open the menu
+            // Step 2 is index 2.
+            if (index === 2 && type === EVENTS.STEP_AFTER) {
+                setShowMobileHabits(true);
+            }
+            // Close it if we skip or strictly finish? Or just leave it?
+            // Leaving it is fine for user to explore.
         }
     };
 

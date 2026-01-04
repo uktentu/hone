@@ -27,6 +27,8 @@ interface SidebarProps {
     onToggleCollapse?: () => void;
     currentView?: 'calendar' | 'settings';
     onNavigate?: (view: 'calendar' | 'settings') => void;
+    showMobileHabits: boolean;
+    onToggleMobileHabits: (show: boolean) => void;
 }
 
 // Sortable Item Component
@@ -122,7 +124,9 @@ export function Sidebar({
     onSelectHabit,
     selectedHabitIds,
     currentView,
-    onNavigate
+    onNavigate,
+    showMobileHabits,
+    onToggleMobileHabits
 }: SidebarProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -170,7 +174,7 @@ export function Sidebar({
 
 
     // Mobile Habit Popup State
-    const [showMobileHabits, setShowMobileHabits] = useState(false);
+    // const [showMobileHabits, setShowMobileHabits] = useState(false);
 
     // Calendar Management State
     const [isAddingCalendar, setIsAddingCalendar] = useState(false);
@@ -516,7 +520,7 @@ export function Sidebar({
 
                                                 if (isMobile && !isMultiSelectMode && !toggleState) {
                                                     setIsExpanded(false);
-                                                    setShowMobileHabits(false);
+                                                    onToggleMobileHabits(false);
                                                 }
                                             }}
                                             title={habit.name}
@@ -932,7 +936,7 @@ export function Sidebar({
             )}>
                 <button
                     id="tour-mobile-habits-trigger"
-                    onClick={() => setShowMobileHabits(!showMobileHabits)}
+                    onClick={() => onToggleMobileHabits(!showMobileHabits)}
                     className={clsx(
                         "w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg border border-blue-500 text-white transition-all",
                         showMobileHabits ? "opacity-100 scale-110" : "opacity-50 hover:opacity-100 scale-100"
@@ -948,7 +952,7 @@ export function Sidebar({
                 showMobileHabits ? "block" : "hidden"
             )}>
                 <button
-                    onClick={() => setShowMobileHabits(false)}
+                    onClick={() => onToggleMobileHabits(false)}
                     className="absolute top-2 right-2 p-1 bg-zinc-900 rounded-full text-zinc-400 z-50 md:hidden"
                 >
                     <X size={14} />

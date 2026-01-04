@@ -32,6 +32,8 @@ function AppContent() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
+  const [showMobileHabits, setShowMobileHabits] = useState(false);
+
   // If showing welcome, it takes precedence over the main app layout
   if (showWelcome) {
     return <WelcomePage onFinish={() => setShowWelcome(false)} />;
@@ -49,7 +51,9 @@ function AppContent() {
 
   return (
     <Layout>
-      <OnboardingTour />
+      <OnboardingTour
+        setShowMobileHabits={setShowMobileHabits}
+      />
       <Sidebar
         habits={habitData.habits}
         calendars={calendarData.calendars}
@@ -67,6 +71,8 @@ function AppContent() {
         selectedHabitIds={selection.selectedHabitIds}
         currentView={currentView}
         onNavigate={setCurrentView}
+        showMobileHabits={showMobileHabits}
+        onToggleMobileHabits={setShowMobileHabits}
       />
       {currentView === 'settings' ? (
         <SettingsPage onBack={() => setCurrentView('calendar')} />
