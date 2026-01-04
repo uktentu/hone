@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, Link as LinkIcon, AlertCircle, CheckCircle, Shield, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Link as LinkIcon, AlertCircle, CheckCircle, Shield, ArrowLeft, LogOut } from 'lucide-react';
 import clsx from 'clsx';
 
 interface SettingsPageProps {
@@ -8,7 +8,7 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
-    const { currentUser, linkGoogle, unlinkProvider, resetPassword, updateUserPassword } = useAuth();
+    const { currentUser, linkGoogle, unlinkProvider, resetPassword, updateUserPassword, logout } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [confirmUnlink, setConfirmUnlink] = useState<string | null>(null);
@@ -258,9 +258,18 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                                 type="button"
                                 onClick={handlePasswordReset}
                                 disabled={isLoading}
-                                className="text-sm text-zinc-400 hover:text-white underline decoration-zinc-700 underline-offset-4 transition-colors p-0"
+                                className="block w-full text-left text-sm text-zinc-400 hover:text-white underline decoration-zinc-700 underline-offset-4 transition-colors p-0 mb-4"
                             >
                                 Send Password Reset Email
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={logout}
+                                className="flex items-center gap-2 w-full px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/50 rounded font-medium text-sm transition-colors"
+                            >
+                                <LogOut size={16} />
+                                Sign Out
                             </button>
                         </div>
                     </div>
