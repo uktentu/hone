@@ -158,6 +158,11 @@ export function Sidebar({
         await logout();
     };
 
+    const resetTour = () => {
+        localStorage.removeItem('hone_has_seen_onboarding');
+        window.location.reload();
+    };
+
 
     // Mobile Habit Popup State
     const [showMobileHabits, setShowMobileHabits] = useState(false);
@@ -322,6 +327,7 @@ export function Sidebar({
 
                 {/* Mobile/Toggle Multi-Select Button */}
                 <button
+                    id="tour-mobile-multiselect"
                     onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
                     className={clsx(
                         "p-1.5 border rounded-md transition-all active:scale-95",
@@ -336,6 +342,7 @@ export function Sidebar({
 
                 {!isAdding && !editingId && (
                     <button
+                        id="tour-sidebar-add"
                         onClick={startAdding}
                         className="p-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-md text-zinc-400 hover:text-white transition-all active:scale-95"
                     >
@@ -422,7 +429,7 @@ export function Sidebar({
                     </div>
                 )}
 
-                <div className="space-y-1">
+                <div className="space-y-1" id="tour-habit-list">
                     <DndContext
                         id="habits-dnd"
                         sensors={sensors}
@@ -656,13 +663,22 @@ export function Sidebar({
 
                         {/* Mobile-only logout button */}
                         {currentUser && (
-                            <button
-                                onClick={handleLogout}
-                                className="md:hidden p-2 hover:bg-zinc-800 rounded transition-colors group"
-                                title="Logout"
-                            >
-                                <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
-                            </button>
+                            <div className="md:hidden flex items-center gap-1">
+                                <button
+                                    onClick={resetTour}
+                                    className="p-2 hover:bg-zinc-800 rounded transition-colors group"
+                                    title="Reset Tour"
+                                >
+                                    <Sparkles className="w-4 h-4 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
+                                </button>
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-2 hover:bg-zinc-800 rounded transition-colors group"
+                                    title="Logout"
+                                >
+                                    <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                                </button>
+                            </div>
                         )}
                     </div>
 
@@ -849,13 +865,24 @@ export function Sidebar({
                             )}>
                                 <p className="text-xs text-zinc-400 truncate">{currentUser.email}</p>
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                className="p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0"
-                                title="Logout"
-                            >
-                                <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                {isExpanded && (
+                                    <button
+                                        onClick={resetTour}
+                                        className="p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0"
+                                        title="Reset Tour"
+                                    >
+                                        <Sparkles className="w-4 h-4 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-2 hover:bg-zinc-800 rounded transition-colors group flex-shrink-0"
+                                    title="Logout"
+                                >
+                                    <LogOut className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

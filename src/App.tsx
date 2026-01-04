@@ -8,6 +8,8 @@ import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useHabits } from './hooks/useHabits';
 
+import { OnboardingTour } from './components/OnboardingTour';
+
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const { currentUser } = useAuth();
@@ -28,6 +30,7 @@ function AppContent() {
 
   return (
     <Layout>
+      <OnboardingTour />
       <Sidebar
         habits={habitData.habits}
         calendars={calendarData.calendars}

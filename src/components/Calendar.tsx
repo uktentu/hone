@@ -98,7 +98,7 @@ export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggl
 
                     <div className="flex items-center gap-2">
                         {/* View Mode Toggle */}
-                        <div className="flex bg-zinc-900/50 rounded-md p-1 border border-zinc-900">
+                        <div id="tour-view-toggles" className="flex bg-zinc-900/50 rounded-md p-1 border border-zinc-900">
                             {(['year', 'graph'] as const).map((mode) => (
                                 <button
                                     key={mode}
@@ -117,8 +117,9 @@ export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggl
                             ))}
                         </div>
 
+
                         {/* Navigation */}
-                        <div className="flex items-center gap-1 bg-zinc-900/50 rounded-md p-1 border border-zinc-900">
+                        <div id="tour-calendar-nav" className="flex items-center gap-1 bg-zinc-900/50 rounded-md p-1 border border-zinc-900">
                             <button
                                 onClick={prev}
                                 aria-label="Previous"
@@ -146,7 +147,7 @@ export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggl
 
                 {/* Statistics - Compact & Monochrome */}
                 {selectedHabits.length > 0 && selectedHabitStats && (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
+                    <div id="tour-calendar-stats" className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
                         {!isMultiSelect && (
                             <>
                                 <div className="flex items-baseline gap-1.5">
@@ -184,7 +185,7 @@ export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggl
 
             {/* Content */}
             <div className="flex-1 overflow-hidden px-4 pb-4 flex flex-col">
-                <div className="max-w-full mx-auto w-full h-full flex flex-col">
+                <div id="tour-calendar-main" className="max-w-full mx-auto w-full h-full flex flex-col">
                     {viewMode === 'year' && (
                         <YearView
                             year={currentDate.getFullYear()}
