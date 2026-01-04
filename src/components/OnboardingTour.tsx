@@ -24,6 +24,8 @@ export function OnboardingTour() {
         }
     };
 
+    const isMobile = window.innerWidth < 768;
+
     const steps: Step[] = [
         {
             target: 'body',
@@ -38,14 +40,21 @@ export function OnboardingTour() {
             placement: 'center',
             disableBeacon: true,
         },
-        {
-            target: '#tour-sidebar-add',
-            content: 'Start by creating a habit. Choose an icon and color to customize it.',
-        },
-        {
-            target: '#tour-habit-list',
-            content: 'Your habits live here. Drag to reorder them, or click the edit icon to make changes.',
-        },
+        ...(isMobile ? [
+            {
+                target: '#tour-mobile-habits-trigger',
+                content: 'Tap button to open your habits menu. You can add, edit, and reorder habits from there.',
+            }
+        ] : [
+            {
+                target: '#tour-sidebar-add',
+                content: 'Start by creating a habit. Choose an icon and color to customize it.',
+            },
+            {
+                target: '#tour-habit-list',
+                content: 'Your habits live here. Drag to reorder them, or click the edit icon to make changes.',
+            }
+        ]),
         {
             target: '#tour-calendar-main',
             content: 'This is your tracking canvas. Tap a day to complete a habit (or multiple in multi-select mode).',

@@ -899,6 +899,7 @@ export function Sidebar({
                 "opacity-100" // Always visible
             )}>
                 <button
+                    id="tour-mobile-habits-trigger"
                     onClick={() => setShowMobileHabits(!showMobileHabits)}
                     className={clsx(
                         "w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg border border-blue-500 text-white transition-all",
