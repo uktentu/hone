@@ -31,7 +31,7 @@ export function useHabits() {
     const [habits, setHabits] = useState<Habit[]>([]);
     const [logs, setLogs] = useState<HabitLog>({});
     const [selectedCalendarId, setSelectedCalendarId] = useState<string>('');
-    const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
+    const [selectedHabitIds, setSelectedHabitIds] = useState<string[]>([]);
     const [initialized, setInitialized] = useState(false);
 
     // Setup Firestore real-time listeners
@@ -126,13 +126,16 @@ export function useHabits() {
 
     // Auto-select first habit when calendar changes
     useEffect(() => {
-        if (selectedHabitId) {
-            const habit = habits.find(h => h.id === selectedHabitId);
-            if (habit && habit.calendarId !== selectedCalendarId) {
-                setSelectedHabitId(filteredHabits[0]?.id || null);
+        if (selectedHabitIds.length > 0) {
+            // Check if selected habits belong to current calendar
+            const validIds = selectedHabitIds.filter(id => habits.find(h => h.id === id)?.calendarId === selectedCalendarId);
+            if (validIds.length === 0 && filteredHabits.length > 0) {
+                setSelectedHabitIds([filteredHabits[0].id]);
+            } else if (validIds.length !== selectedHabitIds.length) {
+                setSelectedHabitIds(validIds.length > 0 ? validIds : (filteredHabits[0] ? [filteredHabits[0].id] : []));
             }
         } else if (filteredHabits.length > 0) {
-            setSelectedHabitId(filteredHabits[0].id);
+            setSelectedHabitIds([filteredHabits[0].id]);
         }
     }, [selectedCalendarId, filteredHabits, habits]);
 
@@ -210,7 +213,7 @@ export function useHabits() {
             order: maxOrder + 1
         };
         const docRef = await addDoc(collection(db, 'habits'), newHabit);
-        setSelectedHabitId(docRef.id);
+        setSelectedHabitIds([docRef.id]);
     };
 
     const editHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'userId' | 'calendarId'>>) => {
@@ -239,9 +242,9 @@ export function useHabits() {
 
     const deleteHabit = async (id: string) => {
         await deleteDoc(doc(db, 'habits', id));
-        if (selectedHabitId === id) {
+        if (selectedHabitIds.includes(id)) {
             const remaining = habits.filter(h => h.id !== id && h.calendarId === selectedCalendarId);
-            setSelectedHabitId(remaining[0]?.id || null);
+            setSelectedHabitIds(remaining.length > 0 ? [remaining[0].id] : []);
         }
     };
 
@@ -267,98 +270,164 @@ export function useHabits() {
         return logs[dateKey]?.includes(habitId) || false;
     };
 
-    const toggleHabitSelection = (habitId: string) => {
-        setSelectedHabitId(habitId);
+    const toggleHabitSelection = (habitId: string, multiSelect: boolean = false) => {
+        setSelectedHabitIds(prev => {
+            if (!multiSelect) return [habitId];
+            if (prev.includes(habitId)) {
+                // Determine behavior for deselecting: if it's the only one, don't deselect (optional, but safer)
+                // Actually, let's allow deselecting as long as at least one remains? Or just toggle.
+                // If we deselect the last one, maybe select nothing? Or default back to first?
+                // Let's standard toggle behavior.
+                const newVal = prev.filter(id => id !== habitId);
+                return newVal.length === 0 ? [habitId] : newVal; // Prevent empty selection for now
+            }
+            return [...prev, habitId];
+        });
     };
 
-    const getHabitStats = (habitId: string): HabitStats => {
+    const getHabitStats = (habitIds: string[]): HabitStats => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const allDates = Object.keys(logs)
-            .filter(dateKey => logs[dateKey].includes(habitId))
-            .map(dateKey => {
-                const [y, m, d] = dateKey.split('-').map(Number);
-                return new Date(y, m - 1, d);
-            })
-            .sort((a, b) => b.getTime() - a.getTime());
+        // Basic aggregation
+        let totalDays = 0;
+        let thisWeek = 0;
+        let thisMonth = 0;
+        let totalCompletionRate = 0;
 
-        const totalDays = allDates.length;
-
-        // Current streak
+        // Streaks only make sense for single selection effectively
         let currentStreak = 0;
-        let checkDate = new Date(today);
-        for (let i = 0; i < 365; i++) {
-            const dateKey = format(checkDate, 'yyyy-MM-dd');
-            if (logs[dateKey]?.includes(habitId)) {
-                currentStreak++;
-                checkDate = subDays(checkDate, 1);
-            } else {
-                break;
-            }
-        }
-
-        // Longest streak
         let longestStreak = 0;
-        if (allDates.length > 0) {
-            let tempStreak = 1;
-            for (let i = 1; i < allDates.length; i++) {
-                const daysDiff = differenceInDays(allDates[i - 1], allDates[i]);
-                if (daysDiff === 1) {
-                    tempStreak++;
+
+        // If single habit, calculate fully. If multiple, aggregate counts and avg rate.
+
+        if (habitIds.length === 1) {
+            const habitId = habitIds[0];
+            const allDates = Object.keys(logs)
+                .filter(dateKey => logs[dateKey].includes(habitId))
+                .map(dateKey => {
+                    const [y, m, d] = dateKey.split('-').map(Number);
+                    return new Date(y, m - 1, d);
+                })
+                .sort((a, b) => b.getTime() - a.getTime());
+
+            totalDays = allDates.length;
+
+            // Current streak
+            let checkDate = new Date(today);
+            for (let i = 0; i < 365; i++) {
+                const dateKey = format(checkDate, 'yyyy-MM-dd');
+                if (logs[dateKey]?.includes(habitId)) {
+                    currentStreak++;
+                    checkDate = subDays(checkDate, 1);
                 } else {
-                    longestStreak = Math.max(longestStreak, tempStreak);
-                    tempStreak = 1;
+                    break;
                 }
             }
-            longestStreak = Math.max(longestStreak, tempStreak);
+
+            // Longest streak
+            if (allDates.length > 0) {
+                let tempStreak = 1;
+                for (let i = 1; i < allDates.length; i++) {
+                    const daysDiff = differenceInDays(allDates[i - 1], allDates[i]);
+                    if (daysDiff === 1) {
+                        tempStreak++;
+                    } else {
+                        longestStreak = Math.max(longestStreak, tempStreak);
+                        tempStreak = 1;
+                    }
+                }
+                longestStreak = Math.max(longestStreak, tempStreak);
+            }
+
+            // Week/Month
+            const weekStart = startOfWeek(today);
+            const weekEnd = endOfWeek(today);
+            const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+            thisWeek = weekDays.filter(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                return logs[dateKey]?.includes(habitId);
+            }).length;
+
+            const monthStart = startOfMonth(today);
+            const monthEnd = endOfMonth(today);
+            const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+            thisMonth = monthDays.filter(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                return logs[dateKey]?.includes(habitId);
+            }).length;
+
+            // Rate
+            const last30Days = eachDayOfInterval({
+                start: subDays(today, 29),
+                end: today
+            });
+            const completedLast30 = last30Days.filter(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                return logs[dateKey]?.includes(habitId);
+            }).length;
+            totalCompletionRate = last30Days.length > 0
+                ? (completedLast30 / last30Days.length) * 100
+                : 0;
+
+        } else {
+            // Multi-habit aggregation
+            // We can sum counts? Or average?
+            // User asked: "selecting multiple habits that updates the stats and progress"
+            // Summing week/month makes sense. Rate should be average.
+
+            habitIds.forEach(habitId => {
+                // Week
+                const weekStart = startOfWeek(today);
+                const weekEnd = endOfWeek(today);
+                const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+                thisWeek += weekDays.filter(day => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    return logs[dateKey]?.includes(habitId);
+                }).length;
+
+                // Month
+                const monthStart = startOfMonth(today);
+                const monthEnd = endOfMonth(today);
+                const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                thisMonth += monthDays.filter(day => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    return logs[dateKey]?.includes(habitId);
+                }).length;
+
+                // Rate
+                const last30Days = eachDayOfInterval({
+                    start: subDays(today, 29),
+                    end: today
+                });
+                const completedLast30 = last30Days.filter(day => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    return logs[dateKey]?.includes(habitId);
+                }).length;
+                totalCompletionRate += last30Days.length > 0
+                    ? (completedLast30 / last30Days.length) * 100
+                    : 0;
+            });
+
+            if (habitIds.length > 0) {
+                totalCompletionRate = totalCompletionRate / habitIds.length;
+            }
         }
 
-        // This week
-        const weekStart = startOfWeek(today);
-        const weekEnd = endOfWeek(today);
-        const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-        const thisWeek = weekDays.filter(day => {
-            const dateKey = format(day, 'yyyy-MM-dd');
-            return logs[dateKey]?.includes(habitId);
-        }).length;
-
-        // This month
-        const monthStart = startOfMonth(today);
-        const monthEnd = endOfMonth(today);
-        const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-        const thisMonth = monthDays.filter(day => {
-            const dateKey = format(day, 'yyyy-MM-dd');
-            return logs[dateKey]?.includes(habitId);
-        }).length;
-
-        // Completion rate (last 30 days)
-        const last30Days = eachDayOfInterval({
-            start: subDays(today, 29),
-            end: today
-        });
-        const completedLast30 = last30Days.filter(day => {
-            const dateKey = format(day, 'yyyy-MM-dd');
-            return logs[dateKey]?.includes(habitId);
-        }).length;
-        const completionRate = last30Days.length > 0
-            ? (completedLast30 / last30Days.length) * 100
-            : 0;
-
         return {
-            totalDays,
-            currentStreak,
-            longestStreak,
+            totalDays, // Not aggregated for multi
+            currentStreak, // Not aggregated for multi
+            longestStreak, // Not aggregated for multi
             thisWeek,
             thisMonth,
-            completionRate: Math.round(completionRate)
+            completionRate: Math.round(totalCompletionRate)
         };
     };
 
     const selectedHabitStats = useMemo(() => {
-        if (!selectedHabitId) return null;
-        return getHabitStats(selectedHabitId);
-    }, [selectedHabitId, logs]);
+        if (selectedHabitIds.length === 0) return null;
+        return getHabitStats(selectedHabitIds);
+    }, [selectedHabitIds, logs]);
 
     return {
         habitData: {
@@ -376,7 +445,7 @@ export function useHabits() {
             selectCalendar: setSelectedCalendarId
         },
         selection: {
-            selectedHabitId,
+            selectedHabitIds,
             selectedHabitStats,
             toggleHabitSelection
         },

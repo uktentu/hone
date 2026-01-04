@@ -42,11 +42,11 @@ function AppContent() {
         onDeleteHabit={actions.deleteHabit}
         onReorderHabits={actions.reorderHabits}
         onSelectHabit={selection.toggleHabitSelection}
-        selectedHabitId={selection.selectedHabitId}
+        selectedHabitIds={selection.selectedHabitIds}
       />
       <Calendar
         habits={habitData.habits}
-        selectedHabitId={selection.selectedHabitId}
+        selectedHabitIds={selection.selectedHabitIds}
         selectedHabitStats={selection.selectedHabitStats}
         onToggleHabit={actions.toggleHabitForDate}
         isHabitCompleted={actions.isHabitCompleted}

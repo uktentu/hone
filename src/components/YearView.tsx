@@ -1,11 +1,13 @@
 import { startOfYear, eachMonthOfInterval, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameMonth, isToday } from 'date-fns';
 import clsx from 'clsx';
+import { useState } from 'react';
 import type { Habit } from '../types';
+import { Tooltip } from './Tooltip';
 
 interface YearViewProps {
     year: number;
     habits: Habit[];
-    selectedHabitId: string | null;
+    selectedHabitIds: string[];
     onToggleHabit: (date: Date, habitId: string) => void;
     isHabitCompleted: (date: Date, habitId: string) => boolean;
 }
@@ -40,12 +42,11 @@ function getTextColorForBackground(hexColor: string | undefined): string {
     return luminance > 0.5 ? 'black' : 'white';
 }
 
-export function YearView({ year, habits, selectedHabitId, onToggleHabit, isHabitCompleted }: YearViewProps) {
+export function YearView({ year, habits, selectedHabitIds, onToggleHabit, isHabitCompleted }: YearViewProps) {
     const yearStart = startOfYear(new Date(year, 0, 1));
     const yearEnd = endOfYear(yearStart);
     const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
-
-    const selectedHabit = habits.find(h => h.id === selectedHabitId);
+    const [hoveredTooltip, setHoveredTooltip] = useState<{ content: React.ReactNode; triggerRect: DOMRect } | null>(null);
 
     if (habits.length === 0) {
         return (
@@ -55,7 +56,7 @@ export function YearView({ year, habits, selectedHabitId, onToggleHabit, isHabit
         );
     }
 
-    if (!selectedHabitId || !selectedHabit) {
+    if (selectedHabitIds.length === 0) {
         return (
             <div className="h-full flex items-center justify-center">
                 <p className="text-zinc-500 text-xs">Select a habit</p>
@@ -95,14 +96,42 @@ export function YearView({ year, habits, selectedHabitId, onToggleHabit, isHabit
                                     const isCurrentMonth = isSameMonth(day, month);
                                     if (!isCurrentMonth) return <div key={day.toISOString()} />;
 
-                                    const isCompleted = isHabitCompleted(day, selectedHabitId);
+                                    // Find which of the selected habits are completed on this day
+                                    // We use the first completed one for color priority
+                                    const completedHabitIds = selectedHabitIds.filter(id => isHabitCompleted(day, id));
+                                    const completedHabitId = completedHabitIds[0];
+                                    const completedHabit = completedHabitId ? habits.find(h => h.id === completedHabitId) : null;
+                                    const isCompleted = !!completedHabit;
+
+                                    // Determine display color: White if multiple selected, specific color if single
+                                    const isMultiSelect = selectedHabitIds.length > 1;
+                                    const displayColor = isMultiSelect ? '#ffffff' : completedHabit?.color;
+
                                     const isCurrentDay = isToday(day);
-                                    const textColor = isCompleted ? getTextColorForBackground(selectedHabit?.color) : undefined;
+                                    const textColor = isCompleted ? getTextColorForBackground(displayColor) : undefined;
+
+                                    // Construct title for tooltip
+                                    const completedNames = completedHabitIds
+                                        .map(id => habits.find(h => h.id === id)?.name)
+                                        .filter(Boolean)
+                                        .join('\n• ');
+                                    const title = completedNames
+                                        ? `${format(day, 'MMM d, yyyy')}\n• ${completedNames}`
+                                        : format(day, 'MMM d, yyyy');
 
                                     return (
                                         <button
                                             key={day.toISOString()}
-                                            onClick={() => onToggleHabit(day, selectedHabitId)}
+                                            onMouseEnter={(e) => {
+                                                setHoveredTooltip({
+                                                    content: title,
+                                                    triggerRect: e.currentTarget.getBoundingClientRect()
+                                                });
+                                            }}
+                                            onMouseLeave={() => setHoveredTooltip(null)}
+                                            // Toggle the first selected habit by default if multiple are selected
+                                            // Or toggle specific one if only one selected
+                                            onClick={() => onToggleHabit(day, selectedHabitIds[0])}
                                             className="group relative w-full aspect-square flex items-center justify-center rounded-sm hover:bg-zinc-800/30 transition-colors"
                                         >
                                             <span
@@ -113,7 +142,7 @@ export function YearView({ year, habits, selectedHabitId, onToggleHabit, isHabit
                                                     isCurrentDay && !isCompleted && "text-white font-bold bg-zinc-800"
                                                 )}
                                                 style={{
-                                                    backgroundColor: isCompleted ? selectedHabit.color : undefined,
+                                                    backgroundColor: isCompleted ? displayColor : undefined,
                                                     color: isCompleted ? textColor : undefined
                                                 }}
                                             >
@@ -127,6 +156,11 @@ export function YearView({ year, habits, selectedHabitId, onToggleHabit, isHabit
                     )
                 })}
             </div>
-        </div>
+            <Tooltip
+                content={hoveredTooltip?.content}
+                triggerRect={hoveredTooltip?.triggerRect || null}
+                isVisible={!!hoveredTooltip}
+            />
+        </div >
     );
 }

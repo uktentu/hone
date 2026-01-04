@@ -14,7 +14,7 @@ import type { HabitStats } from '../hooks/useHabits';
 
 interface CalendarProps {
     habits: Habit[];
-    selectedHabitId: string | null;
+    selectedHabitIds: string[];
     selectedHabitStats: HabitStats | null;
     onToggleHabit: (date: Date, habitId: string) => void;
     isHabitCompleted: (date: Date, habitId: string) => boolean;
@@ -23,11 +23,13 @@ interface CalendarProps {
 
 type ViewMode = 'year' | 'graph';
 
-export function Calendar({ habits, selectedHabitId, selectedHabitStats, onToggleHabit, isHabitCompleted, logs }: CalendarProps) {
+export function Calendar({ habits, selectedHabitIds, selectedHabitStats, onToggleHabit, isHabitCompleted, logs }: CalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<ViewMode>('year');
 
-    const selectedHabit = habits.find(h => h.id === selectedHabitId) || null;
+    const selectedHabits = habits.filter(h => selectedHabitIds.includes(h.id));
+    const isMultiSelect = selectedHabits.length > 1;
+
     // ... (imports and other lines remain handled by replace logic, I need to check line numbers carefully)
 
     const next = () => {
@@ -73,8 +75,8 @@ export function Calendar({ habits, selectedHabitId, selectedHabitStats, onToggle
                             </h1>
                             <span className="text-xs text-zinc-500">|</span>
                             <p className="text-xs text-zinc-400 tracking-wide">
-                                {selectedHabit
-                                    ? selectedHabit.name
+                                {selectedHabits.length > 0
+                                    ? (isMultiSelect ? `${selectedHabits.length} habits selected` : selectedHabits[0].name)
                                     : habits.length === 0
                                         ? 'Create a habit'
                                         : 'Select a habit'}
@@ -131,21 +133,28 @@ export function Calendar({ habits, selectedHabitId, selectedHabitStats, onToggle
                 </div>
 
                 {/* Statistics - Compact & Monochrome */}
-                {selectedHabit && selectedHabitStats && (
+                {selectedHabits.length > 0 && selectedHabitStats && (
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
-                        <div className="flex items-baseline gap-1.5">
-                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Current</span>
-                            <span className="text-sm font-bold text-white">{selectedHabitStats.currentStreak}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">d</span></span>
-                        </div>
-                        <div className="hidden sm:block w-px h-3 bg-zinc-800" />
-                        <div className="flex items-baseline gap-1.5">
-                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Best</span>
-                            <span className="text-sm font-bold text-white">{selectedHabitStats.longestStreak}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">d</span></span>
-                        </div>
-                        <div className="hidden sm:block w-px h-3 bg-zinc-800" />
+                        {!isMultiSelect && (
+                            <>
+                                <div className="flex items-baseline gap-1.5">
+                                    <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Current</span>
+                                    <span className="text-sm font-bold text-white">{selectedHabitStats.currentStreak}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">d</span></span>
+                                </div>
+                                <div className="hidden sm:block w-px h-3 bg-zinc-800" />
+                                <div className="flex items-baseline gap-1.5">
+                                    <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Best</span>
+                                    <span className="text-sm font-bold text-white">{selectedHabitStats.longestStreak}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">d</span></span>
+                                </div>
+                                <div className="hidden sm:block w-px h-3 bg-zinc-800" />
+                            </>
+                        )}
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Week</span>
-                            <span className="text-sm font-bold text-white">{selectedHabitStats.thisWeek}<span className="text-[10px] font-normal text-zinc-600 ml-0.5">/7</span></span>
+                            <span className="text-sm font-bold text-white">
+                                {selectedHabitStats.thisWeek}
+                                {!isMultiSelect && <span className="text-[10px] font-normal text-zinc-600 ml-0.5">/7</span>}
+                            </span>
                         </div>
                         <div className="hidden sm:block w-px h-3 bg-zinc-800" />
                         <div className="flex items-baseline gap-1.5">
@@ -168,7 +177,7 @@ export function Calendar({ habits, selectedHabitId, selectedHabitStats, onToggle
                         <YearView
                             year={currentDate.getFullYear()}
                             habits={habits}
-                            selectedHabitId={selectedHabitId}
+                            selectedHabitIds={selectedHabitIds}
                             onToggleHabit={handleToggleHabit}
                             isHabitCompleted={isHabitCompleted}
                         />
@@ -178,7 +187,7 @@ export function Calendar({ habits, selectedHabitId, selectedHabitStats, onToggle
                         <GraphView
                             year={currentDate.getFullYear()}
                             habits={habits}
-                            selectedHabitId={selectedHabitId}
+                            selectedHabitIds={selectedHabitIds}
                             isHabitCompleted={isHabitCompleted}
                             logs={logs}
                         />

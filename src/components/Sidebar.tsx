@@ -1,5 +1,5 @@
 import type { Habit, CalendarGroup } from '../types';
-import { Plus, Trash2, Edit2, X, Search, Sparkles, Layout, Folder, FolderOpen, LogOut } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Search, Sparkles, Layout, Folder, FolderOpen, LogOut, List } from 'lucide-react';
 
 import clsx from 'clsx';
 import { useState, useEffect, useRef } from 'react';
@@ -21,8 +21,10 @@ interface SidebarProps {
     onEditHabit: (id: string, updates: Partial<Omit<Habit, 'id' | 'calendarId'>>) => void;
     onDeleteHabit: (id: string) => void;
     onReorderHabits: (activeId: string, overId: string) => void;
-    onSelectHabit: (id: string) => void;
-    selectedHabitId: string | null;
+    onSelectHabit: (id: string, multiSelect: boolean) => void;
+    selectedHabitIds: string[]; // Updated prop
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
 }
 
 // Sortable Item Component
@@ -115,7 +117,7 @@ export function Sidebar({
     onDeleteHabit,
     onReorderHabits,
     onSelectHabit,
-    selectedHabitId
+    selectedHabitIds
 }: SidebarProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -172,6 +174,7 @@ export function Sidebar({
     const [name, setName] = useState('');
     const [emoji, setEmoji] = useState(PRESET_EMOJIS[0]);
     const [color, setColor] = useState(PRESET_COLORS[0]);
+    const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
     // Popover State
     const [activePopover, setActivePopover] = useState<{ type: 'emoji' | 'color' | 'calendar-color', triggerRect: DOMRect } | null>(null);
@@ -316,6 +319,21 @@ export function Sidebar({
                         className="w-full bg-zinc-900 rounded-md pl-7 pr-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-700 transition-all border border-zinc-800"
                     />
                 </div>
+
+                {/* Mobile/Toggle Multi-Select Button */}
+                <button
+                    onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
+                    className={clsx(
+                        "p-1.5 border rounded-md transition-all active:scale-95",
+                        isMultiSelectMode
+                            ? "bg-white text-black border-white"
+                            : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:bg-zinc-800"
+                    )}
+                    title="Toggle Multi-Select Mode"
+                >
+                    <List size={14} />
+                </button>
+
                 {!isAdding && !editingId && (
                     <button
                         onClick={startAdding}
@@ -328,6 +346,7 @@ export function Sidebar({
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-2 py-2 relative custom-scrollbar">
+
                 {isAdding && (
                     <form ref={addFormRef} onSubmit={handleSubmit} className="mb-3 bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 animate-slide-in">
                         <div className="flex items-center gap-2 mb-3">
@@ -416,7 +435,7 @@ export function Sidebar({
                         >
                             {filteredHabits.map((habit) => {
                                 const isEditing = habit.id === editingId;
-                                const isSelected = selectedHabitId === habit.id;
+                                const isSelected = selectedHabitIds.includes(habit.id);
 
                                 if (isEditing) {
                                     return (
@@ -478,9 +497,10 @@ export function Sidebar({
                                 return (
                                     <SortableHabitItem key={habit.id} habit={habit} isSelected={isSelected}>
                                         <div
-                                            onClick={() => {
-                                                onSelectHabit(habit.id);
-                                                if (window.matchMedia('(max-width: 768px)').matches) {
+                                            onClick={(e) => {
+                                                const multiSelect = e.ctrlKey || e.metaKey;
+                                                onSelectHabit(habit.id, multiSelect);
+                                                if (window.matchMedia('(max-width: 768px)').matches && !multiSelect) {
                                                     setIsExpanded(false);
                                                     setShowMobileHabits(false);
                                                 }
@@ -536,7 +556,7 @@ export function Sidebar({
                         </SortableContext>
                     </DndContext>
                 </div>
-            </div>
+            </div >
         </>
     );
 
