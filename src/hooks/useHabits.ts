@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Habit, HabitLog, CalendarGroup } from '../types';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, subDays, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
@@ -115,6 +115,7 @@ export function useHabits() {
             unsubHabits();
             unsubLogs();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser, initialized]);
 
     // Sort habits by order
@@ -137,7 +138,7 @@ export function useHabits() {
         } else if (filteredHabits.length > 0) {
             setSelectedHabitIds([filteredHabits[0].id]);
         }
-    }, [selectedCalendarId, filteredHabits, habits]);
+    }, [selectedCalendarId, filteredHabits, habits, selectedHabitIds]);
 
     const addCalendar = async (name: string, color?: string) => {
         if (!currentUser) return;
@@ -311,7 +312,7 @@ export function useHabits() {
         });
     };
 
-    const getHabitStats = (habitIds: string[]): HabitStats => {
+    const getHabitStats = useCallback((habitIds: string[]): HabitStats => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -448,12 +449,12 @@ export function useHabits() {
             thisMonth,
             completionRate: Math.round(totalCompletionRate)
         };
-    };
+    }, [logs]);
 
     const selectedHabitStats = useMemo(() => {
         if (selectedHabitIds.length === 0) return null;
         return getHabitStats(selectedHabitIds);
-    }, [selectedHabitIds, logs]);
+    }, [selectedHabitIds, getHabitStats]);
 
     return {
         habitData: {

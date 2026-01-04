@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useState, useLayoutEffect } from 'react';
 
 interface TooltipProps {
     content: React.ReactNode;
@@ -10,7 +10,7 @@ interface TooltipProps {
 export function Tooltip({ content, triggerRect, isVisible }: TooltipProps) {
     const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (triggerRect && isVisible) {
             // Calculate position
             const padding = 8;
