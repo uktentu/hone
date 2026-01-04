@@ -35,6 +35,7 @@ export function AuthPage({ onComplete }: AuthPageProps) {
                 completeLoginWithLink(email, window.location.href)
                     .then(() => {
                         setCompletingSignup(true);
+                        setEmail(email!); // Update state so it shows in the UI
                         setSuccessMessage('Email verified! Please set a password to complete your account.');
                     })
                     .catch((err) => {
@@ -225,26 +226,27 @@ export function AuthPage({ onComplete }: AuthPageProps) {
                                     </div>
                                 )}
 
-                                {!completingSignup && (
-                                    <div>
-                                        <label htmlFor="email" className="block text-sm font-medium text-zinc-400 mb-2">
-                                            Email
-                                        </label>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                                            <input
-                                                id="email"
-                                                type="email"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                disabled={loading}
-                                                className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all disabled:opacity-50"
-                                                placeholder="you@example.com"
-                                                autoComplete="email"
-                                            />
-                                        </div>
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium text-zinc-400 mb-2">
+                                        Email
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                                        <input
+                                            id="email"
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            disabled={loading || completingSignup}
+                                            className={clsx(
+                                                "w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all disabled:opacity-50",
+                                                completingSignup && "opacity-60 cursor-not-allowed"
+                                            )}
+                                            placeholder="you@example.com"
+                                            autoComplete="email"
+                                        />
                                     </div>
-                                )}
+                                </div>
 
 
                                 {(isLogin || completingSignup) && (
