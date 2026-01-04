@@ -406,7 +406,7 @@ export function AuthPage({ onComplete, onSignupSuccess }: AuthPageProps) {
                 </div>
 
                 <p className="text-center text-zinc-600 text-xs mt-6">
-                    {otpSent ? 'Having trouble? Contact use.hone.app@gmail.com' : 'Your data is securely stored with Firebase'}
+                    {otpSent ? 'Having trouble? Contact hone@usehone.qzz.io' : 'Your data is securely stored with Firebase'}
                 </p>
             </div>
         </div>

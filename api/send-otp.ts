@@ -85,8 +85,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 attempts: 0, // Reset attempts on new code
             }),
             transporter.sendMail({
-                from: `"Hone App" <${process.env.SMTP_EMAIL}>`,
-                replyTo: process.env.SMTP_EMAIL,
+                from: `"Hone App" <hone@usehone.qzz.io>`,
+                replyTo: 'hone@usehone.qzz.io',
                 to: email,
                 subject: 'Your Verification Code',
                 text: `Your verification code is: ${otp}\n\nIt expires in 10 minutes.`,

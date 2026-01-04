@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, Link as LinkIcon, AlertCircle, CheckCircle, Shield, ArrowLeft, LogOut, ChevronRight } from 'lucide-react';
+import { Mail, Lock, Link as LinkIcon, AlertCircle, CheckCircle, Shield, ArrowLeft, LogOut, ChevronRight, LifeBuoy } from 'lucide-react';
 import clsx from 'clsx';
 import { getFirebaseErrorMessage } from '../utils/errorMessages';
 
@@ -322,6 +322,26 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                                     </div>
                                 </div>
                             </button>
+                        </div>
+
+
+                        {/* Support */}
+                        <div className="border-b border-zinc-800">
+                            <a
+                                href="mailto:hone@usehone.qzz.io"
+                                className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-zinc-800 rounded-lg text-zinc-400 group-hover:text-white transition-colors">
+                                        <LifeBuoy size={20} />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-medium text-white">Contact Support</p>
+                                        <p className="text-xs text-zinc-500">Need help or have feedback?</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-zinc-600 transition-transform group-hover:translate-x-0.5" />
+                            </a>
                         </div>
 
 
